@@ -1,5 +1,6 @@
+// Trailing slash required — API returns 301 without it
 const DATA_GOV_MY_URL =
-  'https://api.data.gov.my/data-catalogue?id=fuelprice&limit=10&sort=-date'
+  'https://api.data.gov.my/data-catalogue/?id=fuelprice&limit=10&sort=-date'
 export const CACHE_KEY = 'petrol_prices_jb'
 
 export interface PetrolPrices {
@@ -10,30 +11,33 @@ export interface PetrolPrices {
   updatedAt: string
 }
 
+// New API format: each row contains all fuel prices, series_type is 'level' or 'change_weekly'
 export interface PetrolEntry {
   date: string
   series_type: string
-  price: number
+  ron95: number
+  ron97: number
+  diesel: number
 }
 
 export function parsePetrolResponse(data: PetrolEntry[]): PetrolPrices {
   if (!data || data.length === 0) throw new Error('No petrol data')
 
-  const latest = data.reduce((a, b) => (a.date >= b.date ? a : b))
-  const latestDate = latest.date
-  const entries = data.filter((d) => d.date === latestDate)
+  // Find the most recent 'level' entry (actual prices, not weekly change)
+  const levelEntries = data.filter((d) => d.series_type === 'level')
+  if (levelEntries.length === 0) throw new Error('No petrol level data')
 
-  const get = (type: string) => {
-    const entry = entries.find((e) => e.series_type === type)
-    if (!entry) throw new Error(`Missing ${type} price`)
-    return entry.price
-  }
+  const latest = levelEntries.reduce((a, b) => (a.date >= b.date ? a : b))
+
+  if (latest.ron95 == null) throw new Error('Missing ron95 price')
+  if (latest.ron97 == null) throw new Error('Missing ron97 price')
+  if (latest.diesel == null) throw new Error('Missing diesel price')
 
   return {
-    ron95: get('ron95'),
-    ron97: get('ron97'),
-    diesel: get('diesel'),
-    date: latestDate,
+    ron95: latest.ron95,
+    ron97: latest.ron97,
+    diesel: latest.diesel,
+    date: latest.date,
     updatedAt: new Date().toISOString(),
   }
 }
