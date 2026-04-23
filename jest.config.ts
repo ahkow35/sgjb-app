@@ -10,6 +10,9 @@ const config: Config = {
   transformIgnorePatterns: [
     '/node_modules/(?!(@zxing)/)',
   ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+  },
 }
 
 export default createJestConfig(config)
