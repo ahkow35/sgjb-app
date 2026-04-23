@@ -33,7 +33,7 @@ export async function GET() {
     })
 
     return NextResponse.json(prices)
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch petrol prices' }, { status: 500 })
   }
 }

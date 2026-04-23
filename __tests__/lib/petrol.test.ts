@@ -1,4 +1,4 @@
-import { parsePetrolResponse, type PetrolEntry } from '@/lib/petrol'
+import { parsePetrolResponse } from '@/lib/petrol'
 
 describe('parsePetrolResponse', () => {
   it('extracts latest petrol prices from data.gov.my response', () => {
