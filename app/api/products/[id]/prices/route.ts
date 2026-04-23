@@ -1,23 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { db, priceEntries, stores } from '@/lib/db'
+import { eq, desc } from 'drizzle-orm'
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient()
+  try {
+    const data = await db.select({
+      id: priceEntries.id,
+      price: priceEntries.price,
+      currency: priceEntries.currency,
+      quantity: priceEntries.quantity,
+      unit: priceEntries.unit,
+      price_per_unit: priceEntries.pricePerUnit,
+      date_observed: priceEntries.dateObserved,
+      created_at: priceEntries.createdAt,
+      stores: {
+        id: stores.id,
+        name: stores.name,
+        country: stores.country,
+        city: stores.city,
+        type: stores.type,
+      },
+    })
+      .from(priceEntries)
+      .innerJoin(stores, eq(priceEntries.storeId, stores.id))
+      .where(eq(priceEntries.productId, params.id))
+      .orderBy(desc(priceEntries.dateObserved))
+      .limit(50)
 
-  const { data, error } = await supabase
-    .from('price_entries')
-    .select(`
-      id, price, currency, quantity, unit, price_per_unit,
-      date_observed, created_at,
-      stores ( id, name, country, city, type )
-    `)
-    .eq('product_id', params.id)
-    .order('date_observed', { ascending: false })
-    .limit(50)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+    return NextResponse.json(data)
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }

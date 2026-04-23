@@ -1,37 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { db, products } from '@/lib/db'
+import { eq, and, sql, SQL } from 'drizzle-orm'
 import { buildProductSearchQuery } from './utils'
 
+// NOTE: This endpoint has no auth guard. RLS policy "Anyone can add products" no longer
+// applies (no RLS without Supabase). This must not go live without Phase 9 auth.
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const query = searchParams.get('q') ?? ''
   const category = searchParams.get('category') ?? ''
   const limit = Math.min(Math.max(Number(searchParams.get('limit') ?? 20), 1), 50)
 
-  const supabase = createClient()
-  let builder = supabase
-    .from('products')
-    .select('id, name, brand, category, image_url, unit_type, barcode')
-    .limit(limit)
+  const conditions: SQL[] = []
 
   const tsQuery = buildProductSearchQuery(query)
   if (tsQuery) {
-    builder = builder.textSearch('name', tsQuery, { config: 'english' })
+    conditions.push(sql`to_tsvector('english', ${products.name}) @@ to_tsquery('english', ${tsQuery})`)
   }
-
   if (category) {
-    builder = builder.eq('category', category)
+    conditions.push(eq(products.category, category))
   }
 
-  const { data, error } = await builder
+  try {
+    const data = await db.select({
+      id: products.id,
+      name: products.name,
+      brand: products.brand,
+      category: products.category,
+      image_url: products.imageUrl,
+      unit_type: products.unitType,
+      barcode: products.barcode,
+    })
+      .from(products)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .limit(limit)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+    return NextResponse.json(data)
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }
 
-// NOTE: This endpoint has no auth guard. RLS policy "Anyone can add products" allows
-// unauthenticated inserts. This must not go live without Phase 9 auth unless that
-// RLS policy is tightened first.
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { name, brand, category, unit_type, barcode } = body
@@ -40,13 +49,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name and unit_type are required' }, { status: 400 })
   }
 
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .insert({ name, brand: brand ?? '', category: category ?? '', unit_type, barcode: barcode ?? null })
-    .select()
-    .single()
+  try {
+    const [data] = await db.insert(products)
+      .values({
+        name,
+        brand: brand ?? '',
+        category: category ?? '',
+        unitType: unit_type,
+        barcode: barcode ?? null,
+      })
+      .returning()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+    return NextResponse.json(data, { status: 201 })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }

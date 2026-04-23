@@ -1,36 +1,44 @@
-import { createClient } from '@/lib/supabase/server'
+import { db, products } from '@/lib/db'
+import { eq, and, sql, SQL } from 'drizzle-orm'
+import { buildProductSearchQuery } from '@/app/api/products/utils'
 import { ProductCard } from '@/components/ProductCard'
 import { CurrencyToggle } from '@/components/CurrencyToggle'
-import { buildProductSearchQuery } from '@/app/api/products/utils'
 
 interface SearchParams { q?: string; category?: string }
 
 async function getProducts(q: string, category: string) {
-  const supabase = createClient()
-  let builder = supabase
-    .from('products')
-    .select('id, name, brand, category, image_url, unit_type')
-    .limit(30)
+  const conditions: SQL[] = []
 
-  if (q.trim()) {
-    const tsQuery = buildProductSearchQuery(q)
-    if (tsQuery) {
-      builder = builder.textSearch('name', tsQuery, { config: 'english' })
-    }
+  const tsQuery = buildProductSearchQuery(q)
+  if (tsQuery) {
+    conditions.push(sql`to_tsvector('english', ${products.name}) @@ to_tsquery('english', ${tsQuery})`)
   }
-  if (category) builder = builder.eq('category', category)
+  if (category) {
+    conditions.push(eq(products.category, category))
+  }
 
-  const { data, error } = await builder
-  if (error) {
-    console.error('[products] Supabase query error:', error.message)
+  try {
+    return await db.select({
+      id: products.id,
+      name: products.name,
+      brand: products.brand,
+      category: products.category,
+      image_url: products.imageUrl,
+      unit_type: products.unitType,
+    })
+      .from(products)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .limit(30)
+  } catch (e) {
+    console.error('[products] DB query error:', String(e))
+    return []
   }
-  return data ?? []
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
   const q = searchParams.q ?? ''
   const category = searchParams.category ?? ''
-  const products = await getProducts(q, category)
+  const productList = await getProducts(q, category)
 
   return (
     <div className="space-y-3 p-4">
@@ -50,13 +58,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
         />
       </form>
 
-      {products.length === 0 ? (
+      {productList.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
           {q ? `No results for "${q}"` : 'No products yet. Be the first to submit!'}
         </p>
       ) : (
         <div className="space-y-2">
-          {products.map((p) => (
+          {productList.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
