@@ -1,43 +1,36 @@
-import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { BottomNav } from '@/components/BottomNav'
+import { CurrencyProvider } from '@/contexts/CurrencyContext'
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'SGJB — SG & JB Price Comparison',
+  description: 'Compare grocery, pharmacy and petrol prices between Singapore and Johor Bahru',
+  manifest: '/manifest.json',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'SGJB' },
+}
 
 export const viewport: Viewport = {
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#ffffff',
 }
 
-export const metadata: Metadata = {
-  title: "SGJB Price Comparison",
-  description: "Compare grocery, pharmacy and petrol prices between Singapore and Johor Bahru",
-  manifest: '/manifest.json',
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${inter.className} bg-background`}>
+        <CurrencyProvider>
+          <main className="mx-auto max-w-md min-h-screen pb-20">
+            {children}
+          </main>
+          <BottomNav />
+        </CurrencyProvider>
       </body>
     </html>
-  );
+  )
 }
