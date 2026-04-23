@@ -20,7 +20,10 @@ async function getProducts(q: string, category: string) {
   }
   if (category) builder = builder.eq('category', category)
 
-  const { data } = await builder
+  const { data, error } = await builder
+  if (error) {
+    console.error('[products] Supabase query error:', error.message)
+  }
   return data ?? []
 }
 
@@ -37,7 +40,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
       </div>
 
       <form method="GET">
+        <label htmlFor="product-search" className="sr-only">Search products</label>
         <input
+          id="product-search"
           name="q"
           defaultValue={q}
           placeholder="Search products..."

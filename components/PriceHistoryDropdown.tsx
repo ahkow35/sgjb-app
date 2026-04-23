@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import { convert, format } from '@/lib/currency'
 import { PriceTrendSparkline } from './PriceTrendSparkline'
@@ -26,16 +25,23 @@ export function PriceHistoryDropdown({ productId, initialEntries }: Props) {
   const [open, setOpen] = useState(false)
   const [entries, setEntries] = useState<PriceEntry[]>(initialEntries ?? [])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(!!initialEntries)
   const { currency, rate } = useCurrency()
 
   async function load() {
-    if (entries.length > 0) { setOpen((o) => !o); return }
+    if (loaded) { setOpen((o) => !o); return }
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch(`/api/products/${productId}/prices`)
-      const data = await res.json()
+      if (!res.ok) throw new Error(`Failed to load prices (${res.status})`)
+      const data: PriceEntry[] = await res.json()
       setEntries(data)
+      setLoaded(true)
       setOpen(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load prices')
     } finally {
       setLoading(false)
     }
@@ -57,9 +63,13 @@ export function PriceHistoryDropdown({ productId, initialEntries }: Props) {
         onClick={load}
         className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted"
       >
-        <span>{loading ? 'Loading...' : `${entries.length > 0 ? entries.length : '?'} price entries`}</span>
+        <span>{loading ? 'Loading...' : loaded ? `${entries.length} price ${entries.length === 1 ? 'entry' : 'entries'}` : '? price entries'}</span>
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
+
+      {error && (
+        <p className="px-2 py-1.5 text-xs text-destructive">{error}</p>
+      )}
 
       {open && entries.length > 0 && (
         <div className="mt-1 overflow-hidden rounded-md border">

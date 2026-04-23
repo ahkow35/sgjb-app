@@ -26,6 +26,6 @@ describe('PriceHistoryDropdown', () => {
       },
     ]
     render(<PriceHistoryDropdown productId="test-id" initialEntries={entries} />)
-    expect(screen.getByText('1 price entries')).toBeInTheDocument()
+    expect(screen.getByText('1 price entry')).toBeInTheDocument()
   })
 })
