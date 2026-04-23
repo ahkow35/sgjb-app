@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { db, liveData } from '@/lib/db'
+import { eq } from 'drizzle-orm'
 import { fetchExchangeRate, CACHE_KEY } from '@/lib/exchange'
 
 export const revalidate = 3600
 
 export async function GET() {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    const { data: cached } = await supabase
-      .from('live_data')
-      .select('value, updated_at')
-      .eq('key', CACHE_KEY)
-      .single()
+    const [cached] = await db.select().from(liveData).where(eq(liveData.key, CACHE_KEY)).limit(1)
 
     if (cached) {
-      const ageMs = Date.now() - new Date(cached.updated_at).getTime()
+      const ageMs = Date.now() - cached.updatedAt.getTime()
       if (ageMs < 3600_000) {
         return NextResponse.json(cached.value)
       }
@@ -26,11 +18,12 @@ export async function GET() {
 
     const rateData = await fetchExchangeRate()
 
-    await supabase.from('live_data').upsert({
-      key: CACHE_KEY,
-      value: rateData,
-      updated_at: new Date().toISOString(),
-    })
+    await db.insert(liveData)
+      .values({ key: CACHE_KEY, value: rateData, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: liveData.key,
+        set: { value: rateData, updatedAt: new Date() },
+      })
 
     return NextResponse.json(rateData)
   } catch {
