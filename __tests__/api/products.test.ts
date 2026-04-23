@@ -12,4 +12,8 @@ describe('buildProductSearchQuery', () => {
   it('strips special characters', () => {
     expect(buildProductSearchQuery("milo's")).toBe('milos')
   })
+
+  it('returns empty string for all-special-character input', () => {
+    expect(buildProductSearchQuery('???')).toBe('')
+  })
 })

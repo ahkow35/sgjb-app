@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const query = searchParams.get('q') ?? ''
   const category = searchParams.get('category') ?? ''
-  const limit = Math.min(Number(searchParams.get('limit') ?? 20), 50)
+  const limit = Math.min(Math.max(Number(searchParams.get('limit') ?? 20), 1), 50)
 
   const supabase = createClient()
   let builder = supabase
@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
     .select('id, name, brand, category, image_url, unit_type, barcode')
     .limit(limit)
 
-  if (query.trim()) {
-    const tsQuery = buildProductSearchQuery(query)
+  const tsQuery = buildProductSearchQuery(query)
+  if (tsQuery) {
     builder = builder.textSearch('name', tsQuery, { config: 'english' })
   }
 
@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data ?? [])
 }
 
+// NOTE: This endpoint has no auth guard. RLS policy "Anyone can add products" allows
+// unauthenticated inserts. This must not go live without Phase 9 auth unless that
+// RLS policy is tightened first.
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { name, brand, category, unit_type, barcode } = body
