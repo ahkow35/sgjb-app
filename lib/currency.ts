@@ -17,11 +17,12 @@ export function format(amount: number, currency: Currency): string {
  * @param rate - SGD/MYR rate (1 SGD = rate MYR)
  */
 export function convert(
-  amount: number,
+  amount: number | string | null | undefined,
   from: Currency,
   to: Currency,
   rate: number
 ): number {
-  if (from === to) return amount
-  return from === 'SGD' ? amount * rate : amount / rate
+  const n = Number(amount ?? 0)
+  if (from === to) return n
+  return from === 'SGD' ? n * rate : n / rate
 }

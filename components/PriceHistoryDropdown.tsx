@@ -88,9 +88,11 @@ export function PriceHistoryDropdown({ productId, initialEntries }: Props) {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{displayPrice(entry)}</p>
-                  <p className="text-muted-foreground">
-                    {format(convert(entry.price_per_unit, entry.currency, currency, rate), currency)}/{entry.unit}
-                  </p>
+                  {entry.price_per_unit != null && (
+                    <p className="text-muted-foreground">
+                      {format(convert(entry.price_per_unit, entry.currency, currency, rate), currency)}/{entry.unit}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
