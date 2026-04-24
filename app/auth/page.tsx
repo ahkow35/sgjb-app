@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 type Tab = 'signin' | 'signup'
 
-export default function AuthPage() {
+function AuthPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/'
@@ -149,5 +149,13 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageInner />
+    </Suspense>
   )
 }

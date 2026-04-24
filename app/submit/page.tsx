@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, ChevronRight, ChevronLeft, CheckCircle, Plus, X, ScanLine } from 'lucide-react'
 import Link from 'next/link'
@@ -31,7 +31,7 @@ const UNIT_OPTIONS: Record<'weight' | 'each' | 'volume', string[]> = {
   each: ['each', 'pack', 'pcs', 'tablet', 'capsule', 'sachet'],
 }
 
-export default function SubmitPage() {
+function SubmitPageInner() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('product')
 
@@ -645,5 +645,13 @@ export default function SubmitPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function SubmitPage() {
+  return (
+    <Suspense>
+      <SubmitPageInner />
+    </Suspense>
   )
 }

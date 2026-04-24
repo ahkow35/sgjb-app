@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Car, Bus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ const ROUTES = [
 const BUS_COST_SGD = 2.5
 const GRAB_COST_SGD = 15
 
-export default function TripROIPage() {
+function TripROIPageInner() {
   const searchParams = useSearchParams()
 
   // Cart totals from URL params (passed from cart page)
@@ -353,5 +353,13 @@ export default function TripROIPage() {
         )}
       </section>
     </div>
+  )
+}
+
+export default function TripROIPage() {
+  return (
+    <Suspense>
+      <TripROIPageInner />
+    </Suspense>
   )
 }
