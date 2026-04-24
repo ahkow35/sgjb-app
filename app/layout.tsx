@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { BottomNav } from '@/components/BottomNav'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
+import { CartProvider } from '@/lib/cart-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${inter.className} bg-background`}>
         <CurrencyProvider>
-          <main className="mx-auto max-w-md min-h-screen pb-20">
-            {children}
-          </main>
-          <BottomNav />
+          <CartProvider>
+            <main className="mx-auto max-w-md min-h-screen pb-20">
+              {children}
+            </main>
+            <BottomNav />
+          </CartProvider>
         </CurrencyProvider>
       </body>
     </html>

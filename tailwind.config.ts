@@ -57,6 +57,15 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        'scan-line': {
+          '0%, 100%': { top: '0%' },
+          '50%': { top: '100%' },
+        },
+      },
+      animation: {
+        'scan-line': 'scan-line 1.5s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

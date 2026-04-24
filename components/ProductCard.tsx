@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { PriceHistoryDropdown } from './PriceHistoryDropdown'
+import { AddToCartButton } from './AddToCartButton'
 
 interface Product {
   id: string
@@ -29,7 +30,15 @@ export function ProductCard({ product }: Props) {
             />
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-sm">{product.name}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="truncate font-medium text-sm">{product.name}</p>
+              <AddToCartButton
+                productId={product.id}
+                productName={product.name}
+                brand={product.brand}
+                className="shrink-0"
+              />
+            </div>
             {product.brand && (
               <p className="text-xs text-muted-foreground">{product.brand}</p>
             )}
