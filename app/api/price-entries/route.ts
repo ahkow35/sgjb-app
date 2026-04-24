@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, priceEntries, stores } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { db, priceEntries, stores, users } from '@/lib/db'
+import { eq, sql } from 'drizzle-orm'
+import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
@@ -49,9 +53,18 @@ export async function POST(req: NextRequest) {
         quantity: quantityNum.toFixed(3),
         unit: String(unit ?? 'each'),
         pricePerUnit: pricePerUnit != null ? pricePerUnit.toFixed(4) : null,
+        submittedBy: userId,
         dateObserved: String(date_observed),
       })
       .returning()
+
+    // Increment submission count for logged-in user
+    if (userId) {
+      await db
+        .update(users)
+        .set({ submissionCount: sql`${users.submissionCount} + 1` })
+        .where(eq(users.id, userId))
+    }
 
     return NextResponse.json(entry, { status: 201 })
   } catch (e) {

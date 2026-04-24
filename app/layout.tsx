@@ -4,6 +4,7 @@ import './globals.css'
 import { BottomNav } from '@/components/BottomNav'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
 import { CartProvider } from '@/lib/cart-context'
+import { SessionProvider } from '@/components/SessionProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,14 +26,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} bg-background`}>
-        <CurrencyProvider>
-          <CartProvider>
-            <main className="mx-auto max-w-md min-h-screen pb-20">
-              {children}
-            </main>
-            <BottomNav />
-          </CartProvider>
-        </CurrencyProvider>
+        <SessionProvider>
+          <CurrencyProvider>
+            <CartProvider>
+              <main className="mx-auto max-w-md min-h-screen pb-20">
+                {children}
+              </main>
+              <BottomNav />
+            </CartProvider>
+          </CurrencyProvider>
+        </SessionProvider>
       </body>
     </html>
   )

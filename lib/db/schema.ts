@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   numeric,
+  integer,
   timestamp,
   date,
   jsonb,
@@ -45,6 +46,14 @@ export const priceEntries = pgTable('price_entries', {
   pricePerUnit: numeric('price_per_unit', { precision: 10, scale: 4 }),
   submittedBy: uuid('submitted_by'),
   dateObserved: date('date_observed').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  submissionCount: integer('submission_count').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
