@@ -3,7 +3,6 @@ import { eq, desc } from 'drizzle-orm'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { PriceHistoryDropdown } from '@/components/PriceHistoryDropdown'
 
 async function getProduct(id: string) {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1)

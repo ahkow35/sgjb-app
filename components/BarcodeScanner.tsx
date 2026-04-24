@@ -46,7 +46,7 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
         const controls = await reader.decodeFromVideoDevice(
           undefined,
           videoRef.current!,
-          async (result, err) => {
+          async (result, _err) => {
             if (stopped || hasResultRef.current) return
             if (!result) return
 
