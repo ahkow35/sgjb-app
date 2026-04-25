@@ -1,7 +1,5 @@
 'use client'
 import { useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import type { CachedRate } from '@/lib/exchange'
 
@@ -18,32 +16,41 @@ export function ExchangeWidget({ initialData }: Props) {
 
   const sgdToMyr = initialData.rate.toFixed(4)
   const myrToSgd = (1 / initialData.rate).toFixed(4)
+  const updatedTime = new Date(initialData.updatedAt).toLocaleTimeString('en-SG', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-sm font-medium">
-          SGD / MYR Exchange Rate
-          <Badge variant="outline" className="text-xs">
-            {new Date(initialData.date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="bg-gradient-to-br from-navy to-navy-light px-5 pt-10 pb-8 text-white">
+      {/* App header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-extrabold tracking-tight">SGJB</h1>
+        <p className="text-sm text-white/70 mt-0.5">SG & JB Price Comparison</p>
+      </div>
+
+      {/* Rate card */}
+      <div className="rounded-2xl bg-white/10 border border-white/15 px-4 py-4 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-white/60 font-medium uppercase tracking-widest">
+            SGD / MYR Rate
+          </p>
+          <span className="flex items-center gap-1.5 bg-gold/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse inline-block" />
+            Live · {updatedTime}
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-muted p-3 text-center">
-            <p className="text-xs text-muted-foreground">1 SGD =</p>
-            <p className="text-xl font-bold">RM {sgdToMyr}</p>
+          <div>
+            <p className="text-white/50 text-xs">1 SGD =</p>
+            <p className="text-3xl font-extrabold tracking-tight">RM {sgdToMyr}</p>
           </div>
-          <div className="rounded-lg bg-muted p-3 text-center">
-            <p className="text-xs text-muted-foreground">1 MYR =</p>
-            <p className="text-xl font-bold">S$ {myrToSgd}</p>
+          <div>
+            <p className="text-white/50 text-xs">1 MYR =</p>
+            <p className="text-3xl font-extrabold tracking-tight">S$ {myrToSgd}</p>
           </div>
         </div>
-        <p className="mt-2 text-right text-xs text-muted-foreground">
-          Updated {new Date(initialData.updatedAt).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

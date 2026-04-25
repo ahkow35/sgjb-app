@@ -9,9 +9,7 @@ import type { PetrolPrices } from '@/lib/petrol'
 
 async function getExchangeRate(): Promise<CachedRate> {
   const [row] = await db.select().from(liveData).where(eq(liveData.key, EX_KEY)).limit(1)
-
   if (row?.value) return row.value as CachedRate
-
   const fresh = await fetchExchangeRate()
   await db.insert(liveData)
     .values({ key: EX_KEY, value: fresh, updatedAt: new Date() })
@@ -21,9 +19,7 @@ async function getExchangeRate(): Promise<CachedRate> {
 
 async function getPetrolPrices(): Promise<PetrolPrices> {
   const [row] = await db.select().from(liveData).where(eq(liveData.key, PETROL_KEY)).limit(1)
-
   if (row?.value) return row.value as PetrolPrices
-
   const fresh = await fetchPetrolPrices()
   await db.insert(liveData)
     .values({ key: PETROL_KEY, value: fresh, updatedAt: new Date() })
@@ -38,8 +34,7 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <div className="space-y-4 p-4">
-      <h1 className="text-xl font-bold">SGJB Dashboard</h1>
+    <div className="pb-4">
       <ExchangeWidget initialData={exchangeData} />
       <PetrolWidget data={petrolData} />
     </div>
