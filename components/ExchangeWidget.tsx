@@ -35,7 +35,7 @@ export function ExchangeWidget({ initialData }: Props) {
           <p className="text-xs text-white/60 font-medium uppercase tracking-widest">
             SGD / MYR Rate
           </p>
-          <span className="flex items-center gap-1.5 bg-gold/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 bg-gold text-white text-xs font-semibold px-2.5 py-1 rounded-full">
             <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse inline-block" />
             Live · {updatedTime}
           </span>

@@ -118,10 +118,10 @@ function SubmitPageInner() {
       .catch(() => setStores([]))
   }, [step])
 
-  // Reset unit when unit_type changes
+  // Reset unit when product changes — default to the type's first unit if known
   useEffect(() => {
     const unitType = selectedProduct?.unit_type ?? newProduct.unit_type
-    setUnit(UNIT_OPTIONS[unitType][0])
+    setUnit((UNIT_OPTIONS[unitType as keyof typeof UNIT_OPTIONS] ?? UNIT_OPTIONS.each)[0])
   }, [selectedProduct, newProduct.unit_type])
 
   async function handleProductNext() {
@@ -207,8 +207,7 @@ function SubmitPageInner() {
 
   const sgStores = stores.filter((s) => s.country === 'SG')
   const myStores = stores.filter((s) => s.country === 'MY')
-  const unitType = selectedProduct?.unit_type ?? newProduct.unit_type
-  const unitOptions = UNIT_OPTIONS[unitType]
+  const ALL_UNITS = ['g', 'kg', 'ml', 'L', 'each', 'pack', 'pcs', 'tablet', 'capsule', 'sachet']
 
   const canAdvanceProduct =
     creatingNew ? newProduct.name.trim().length > 0 : selectedProduct !== null
@@ -572,7 +571,7 @@ function SubmitPageInner() {
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
               >
-                {unitOptions.map((u) => (
+                {ALL_UNITS.map((u) => (
                   <option key={u} value={u}>
                     {u}
                   </option>

@@ -37,6 +37,7 @@ export function SearchBar() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
+          key={q}
           ref={inputRef}
           defaultValue={q}
           placeholder="Search products…"

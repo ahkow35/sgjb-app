@@ -42,7 +42,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
 
   return (
     <div>
-      <Suspense>
+      <Suspense fallback={null}>
         <SearchBar />
       </Suspense>
 

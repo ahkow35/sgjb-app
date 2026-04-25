@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} bg-background`}>
+      <body className={outfit.className}>
         <SessionProvider>
           <CurrencyProvider>
             <CartProvider>
