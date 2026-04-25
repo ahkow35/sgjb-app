@@ -13,9 +13,13 @@ interface Product {
 
 interface Props {
   product: Product
+  bestSgd?: number | null
+  bestMyr?: number | null
 }
 
-export function ProductCard({ product }: Props) {
+export function ProductCard({ product, bestSgd, bestMyr }: Props) {
+  const hasPrices = bestSgd != null || bestMyr != null
+
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
       <div className="p-3.5">
@@ -58,6 +62,22 @@ export function ProductCard({ product }: Props) {
                 </span>
               )}
             </div>
+
+            {/* Best prices — immediately visible */}
+            {hasPrices && (
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {bestSgd != null && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-xs font-semibold">
+                    🇸🇬 S${bestSgd.toFixed(2)}
+                  </span>
+                )}
+                {bestMyr != null && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 text-xs font-semibold">
+                    🇲🇾 RM{bestMyr.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
