@@ -187,49 +187,49 @@ export default function CartPage() {
 
       {/* Totals summary */}
       {!loading && (totalSGD > 0 || totalMYR > 0) && (
-        <div className="rounded-lg border p-4 space-y-3 mb-4">
-          <h2 className="text-sm font-semibold">Cart Total</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 px-3 py-2.5">
-              <p className="text-xs text-muted-foreground mb-0.5">SG Total</p>
-              <p className="text-lg font-bold">S${totalSGD.toFixed(2)}</p>
-            </div>
-            <div className="rounded-md bg-green-50 dark:bg-green-950/30 px-3 py-2.5">
-              <p className="text-xs text-muted-foreground mb-0.5">JB Total</p>
-              <p className="text-lg font-bold">RM{totalMYR.toFixed(2)}</p>
-              {myrInSGD != null && (
-                <p className="text-xs text-muted-foreground">≈ S${myrInSGD.toFixed(2)}</p>
-              )}
-            </div>
+        <div className="rounded-2xl overflow-hidden border border-border shadow-sm mb-4">
+          {/* Navy header */}
+          <div className="bg-gradient-to-r from-navy to-navy-light px-4 py-3">
+            <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Cart Total</p>
           </div>
-
-          {savings != null && savings > 0 && (
-            <div className="rounded-md bg-green-100 dark:bg-green-900/30 px-3 py-2.5 text-center">
-              <p className="text-xs text-muted-foreground">Potential savings before trip costs</p>
-              <p className="text-lg font-bold text-green-700 dark:text-green-400">
-                S${savings.toFixed(2)}
-              </p>
-              {itemsWithBothPrices < items.length && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  ({items.length - itemsWithBothPrices} item
-                  {items.length - itemsWithBothPrices !== 1 ? 's' : ''} missing JB price)
-                </p>
-              )}
+          <div className="bg-card p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-[#EEF2FF] border border-[#C7D7F5] px-3 py-3">
+                <p className="text-xs text-muted-foreground mb-0.5">🇸🇬 SG Total</p>
+                <p className="text-xl font-extrabold text-navy">S${totalSGD.toFixed(2)}</p>
+              </div>
+              <div className="rounded-xl bg-[#FFFBEB] border border-[#FDE68A] px-3 py-3">
+                <p className="text-xs text-muted-foreground mb-0.5">🇲🇾 JB Total</p>
+                <p className="text-xl font-extrabold text-gold">RM{totalMYR.toFixed(2)}</p>
+                {myrInSGD != null && (
+                  <p className="text-xs text-muted-foreground">≈ S${myrInSGD.toFixed(2)}</p>
+                )}
+              </div>
             </div>
-          )}
 
-          {rate && (
-            <p className="text-xs text-muted-foreground text-right">
-              Rate: 1 SGD = {rate.toFixed(4)} MYR
-            </p>
-          )}
+            {savings != null && savings > 0 && (
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Savings before trip costs</p>
+                  <p className="text-xl font-extrabold text-emerald-700">S${savings.toFixed(2)}</p>
+                </div>
+                <span className="text-2xl">🎉</span>
+              </div>
+            )}
+
+            {rate && (
+              <p className="text-xs text-muted-foreground text-right">
+                1 SGD = {rate.toFixed(4)} MYR
+              </p>
+            )}
+          </div>
         </div>
       )}
 
       {/* Trip ROI CTA */}
       <Link
         href={`/trip-roi?sgd=${totalSGD.toFixed(2)}&myr=${totalMYR.toFixed(2)}`}
-        className="flex items-center justify-between w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground"
+        className="flex items-center justify-between w-full rounded-xl bg-gold px-4 py-3.5 text-sm font-bold text-white shadow-sm"
       >
         <span>Calculate trip ROI</span>
         <ArrowRight className="h-4 w-4" />
