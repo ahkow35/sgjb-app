@@ -3,12 +3,13 @@ import { eq, and, sql, SQL } from 'drizzle-orm'
 import { buildProductSearchQuery } from '@/app/api/products/utils'
 import { ProductCard } from '@/components/ProductCard'
 import { CurrencyToggle } from '@/components/CurrencyToggle'
+import { SearchBar } from '@/components/SearchBar'
+import { Suspense } from 'react'
 
 interface SearchParams { q?: string; category?: string }
 
 async function getProducts(q: string, category: string) {
   const conditions: SQL[] = []
-
   const tsQuery = buildProductSearchQuery(q)
   if (tsQuery) {
     conditions.push(sql`to_tsvector('english', ${products.name}) @@ to_tsquery('english', ${tsQuery})`)
@@ -16,7 +17,6 @@ async function getProducts(q: string, category: string) {
   if (category) {
     conditions.push(eq(products.category, category))
   }
-
   try {
     return await db.select({
       id: products.id,
@@ -41,29 +41,24 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const productList = await getProducts(q, category)
 
   return (
-    <div className="space-y-3 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Products</h1>
+    <div>
+      <Suspense>
+        <SearchBar />
+      </Suspense>
+
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {productList.length} product{productList.length !== 1 ? 's' : ''}
+        </p>
         <CurrencyToggle />
       </div>
 
-      <form method="GET">
-        <label htmlFor="product-search" className="sr-only">Search products</label>
-        <input
-          id="product-search"
-          name="q"
-          defaultValue={q}
-          placeholder="Search products..."
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-        />
-      </form>
-
       {productList.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <p className="py-12 text-center text-sm text-muted-foreground px-4">
           {q ? `No results for "${q}"` : 'No products yet. Be the first to submit!'}
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="px-4 space-y-3 pb-4">
           {productList.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
