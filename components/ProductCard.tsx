@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { AddToCartButton } from './AddToCartButton'
 import { PriceHistoryDropdown } from './PriceHistoryDropdown'
+import { ProductPriceRow } from './ProductPriceRow'
 
 interface Product {
   id: string
@@ -14,11 +15,27 @@ interface Product {
 interface Props {
   product: Product
   bestSgd?: number | null
+  bestSgdStore?: string | null
+  bestSgdDate?: string | null
   bestMyr?: number | null
+  bestMyrStore?: string | null
+  bestMyrDate?: string | null
+  pkgQty?: string | null
+  pkgUnit?: string | null
 }
 
-export function ProductCard({ product, bestSgd, bestMyr }: Props) {
-  const hasPrices = bestSgd != null || bestMyr != null
+export function ProductCard({
+  product,
+  bestSgd, bestSgdStore, bestSgdDate,
+  bestMyr, bestMyrStore, bestMyrDate,
+  pkgQty, pkgUnit,
+}: Props) {
+  // "425g · Groceries" — skip trivial "1 each"
+  const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
+  const subtitle = [
+    hasSize ? `${Number(pkgQty)}${pkgUnit}` : null,
+    product.category || null,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -47,40 +64,24 @@ export function ProductCard({ product, bestSgd, bestMyr }: Props) {
                 className="shrink-0"
               />
             </div>
-            {product.brand && (
-              <p className="text-xs text-muted-foreground mt-0.5">{product.brand}</p>
-            )}
-            <div className="mt-1.5 flex gap-1.5 flex-wrap">
-              {product.category && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-                  {product.category}
-                </span>
-              )}
-              {product.unit_type && (
-                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">
-                  {product.unit_type}
-                </span>
-              )}
-            </div>
-
-            {/* Best prices — immediately visible */}
-            {hasPrices && (
-              <div className="mt-2 flex gap-2 flex-wrap">
-                {bestSgd != null && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-xs font-semibold">
-                    🇸🇬 S${bestSgd.toFixed(2)}
-                  </span>
-                )}
-                {bestMyr != null && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 text-xs font-semibold">
-                    🇲🇾 RM{bestMyr.toFixed(2)}
-                  </span>
-                )}
-              </div>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
       </div>
+
+      {/* Side-by-side SG vs JB prices — immediately visible */}
+      <ProductPriceRow
+        bestSgd={bestSgd ?? null}
+        bestSgdStore={bestSgdStore ?? null}
+        bestSgdDate={bestSgdDate ?? null}
+        bestMyr={bestMyr ?? null}
+        bestMyrStore={bestMyrStore ?? null}
+        bestMyrDate={bestMyrDate ?? null}
+      />
+
+      {/* Full price history */}
       <PriceHistoryDropdown productId={product.id} />
     </div>
   )

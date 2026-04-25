@@ -46,36 +46,67 @@ async function getProducts(q: string, category: string) {
 
   if (productList.length === 0) return []
 
-  // Fetch best SGD + MYR price per product
+  // Fetch best SGD + MYR price (with store, date, package size) per product
   const ids = productList.map((p) => p.id)
   const priceRows = await db
     .select({
       productId: priceEntries.productId,
       price: priceEntries.price,
       currency: priceEntries.currency,
-      country: stores.country,
+      storeName: stores.name,
+      dateObserved: priceEntries.dateObserved,
+      quantity: priceEntries.quantity,
+      unit: priceEntries.unit,
     })
     .from(priceEntries)
     .innerJoin(stores, eq(priceEntries.storeId, stores.id))
     .where(inArray(priceEntries.productId, ids))
 
-  const priceMap = new Map<string, { sgd: number | null; myr: number | null }>()
+  const priceMap = new Map<string, {
+    sgd: number | null; sgdStore: string | null; sgdDate: string | null
+    sgdQty: string | null; sgdUnit: string | null
+    myr: number | null; myrStore: string | null; myrDate: string | null
+  }>()
+
   for (const row of priceRows) {
     const price = Number(row.price)
-    const entry = priceMap.get(row.productId) ?? { sgd: null, myr: null }
+    const entry = priceMap.get(row.productId) ?? {
+      sgd: null, sgdStore: null, sgdDate: null, sgdQty: null, sgdUnit: null,
+      myr: null, myrStore: null, myrDate: null,
+    }
     if (row.currency === 'SGD') {
-      entry.sgd = entry.sgd === null ? price : Math.min(entry.sgd, price)
+      if (entry.sgd === null || price < entry.sgd) {
+        entry.sgd = price
+        entry.sgdStore = row.storeName
+        entry.sgdDate = String(row.dateObserved)
+        entry.sgdQty = String(row.quantity)
+        entry.sgdUnit = row.unit
+      }
     } else {
-      entry.myr = entry.myr === null ? price : Math.min(entry.myr, price)
+      if (entry.myr === null || price < entry.myr) {
+        entry.myr = price
+        entry.myrStore = row.storeName
+        entry.myrDate = String(row.dateObserved)
+      }
     }
     priceMap.set(row.productId, entry)
   }
 
-  return productList.map((p) => ({
-    ...p,
-    best_sgd: priceMap.get(p.id)?.sgd ?? null,
-    best_myr: priceMap.get(p.id)?.myr ?? null,
-  }))
+  return productList.map((p) => {
+    const px = priceMap.get(p.id)
+    return {
+      ...p,
+      best_sgd: px?.sgd ?? null,
+      best_sgd_store: px?.sgdStore ?? null,
+      best_sgd_date: px?.sgdDate ?? null,
+      best_myr: px?.myr ?? null,
+      best_myr_store: px?.myrStore ?? null,
+      best_myr_date: px?.myrDate ?? null,
+      // Package size from cheapest SGD entry (fallback: skip)
+      pkg_qty: px?.sgdQty ?? null,
+      pkg_unit: px?.sgdUnit ?? null,
+    }
+  })
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -103,7 +134,18 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
       ) : (
         <div className="px-4 space-y-3 pb-4">
           {productList.map((p) => (
-            <ProductCard key={p.id} product={p} bestSgd={p.best_sgd} bestMyr={p.best_myr} />
+            <ProductCard
+              key={p.id}
+              product={p}
+              bestSgd={p.best_sgd}
+              bestSgdStore={p.best_sgd_store}
+              bestSgdDate={p.best_sgd_date}
+              bestMyr={p.best_myr}
+              bestMyrStore={p.best_myr_store}
+              bestMyrDate={p.best_myr_date}
+              pkgQty={p.pkg_qty}
+              pkgUnit={p.pkg_unit}
+            />
           ))}
         </div>
       )}
