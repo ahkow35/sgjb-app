@@ -25,10 +25,10 @@ export function AddToCartButton({ productId, productName, brand, className = '' 
   return (
     <button
       onClick={handleAdd}
-      className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+      className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
         inCart || added
-          ? 'bg-green-100 text-green-700'
-          : 'bg-primary/10 text-primary hover:bg-primary/20'
+          ? 'bg-emerald-100 text-emerald-700'
+          : 'bg-gold text-white hover:bg-gold-dark'
       } ${className}`}
     >
       {inCart || added ? (

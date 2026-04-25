@@ -1,7 +1,6 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { PriceHistoryDropdown } from './PriceHistoryDropdown'
+import Link from 'next/link'
 import { AddToCartButton } from './AddToCartButton'
+import { PriceHistoryDropdown } from './PriceHistoryDropdown'
 
 interface Product {
   id: string
@@ -18,20 +17,24 @@ interface Props {
 
 export function ProductCard({ product }: Props) {
   return (
-    <Card>
-      <CardContent className="pt-3 pb-2 px-3">
-        <div className="flex items-start gap-2">
+    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+      <div className="p-3.5">
+        <div className="flex items-start gap-3">
           {product.image_url && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.image_url}
               alt={product.name}
-              className="h-12 w-12 rounded object-contain"
+              className="h-14 w-14 rounded-xl object-contain flex-shrink-0 bg-muted p-1"
             />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <p className="truncate font-medium text-sm">{product.name}</p>
+              <Link href={`/products/${product.id}`} className="min-w-0">
+                <p className="text-sm font-semibold leading-snug text-foreground line-clamp-2">
+                  {product.name}
+                </p>
+              </Link>
               <AddToCartButton
                 productId={product.id}
                 productName={product.name}
@@ -40,18 +43,22 @@ export function ProductCard({ product }: Props) {
               />
             </div>
             {product.brand && (
-              <p className="text-xs text-muted-foreground">{product.brand}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{product.brand}</p>
             )}
-            <div className="mt-1 flex gap-1">
+            <div className="mt-1.5 flex gap-1.5 flex-wrap">
               {product.category && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0">{product.category}</Badge>
+                <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                  {product.category}
+                </span>
               )}
-              <Badge variant="outline" className="text-xs px-1.5 py-0">{product.unit_type}</Badge>
+              <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">
+                {product.unit_type}
+              </span>
             </div>
           </div>
         </div>
-        <PriceHistoryDropdown productId={product.id} />
-      </CardContent>
-    </Card>
+      </div>
+      <PriceHistoryDropdown productId={product.id} />
+    </div>
   )
 }
