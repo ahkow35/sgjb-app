@@ -293,64 +293,59 @@ function TripROIPageInner() {
       </section>
 
       {/* Results */}
-      <section className="rounded-lg border p-4 space-y-3">
-        <h2 className="text-sm font-semibold">Trip Verdict</h2>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Grocery savings (before trip)</span>
-            <span className={grocerySavings > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
-              {grocerySavings > 0 ? `S$${grocerySavings.toFixed(2)}` : '—'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              Transport cost ({transport === 'drive' ? 'round trip' : 'per person × 2'}, total)
-            </span>
-            <span className="text-red-500 font-medium">−S${transportCostSGDTotal.toFixed(2)}</span>
-          </div>
-          <div className="border-t pt-2 flex justify-between font-semibold">
-            <span>Net savings per trip</span>
-            <span
-              className={
-                netSavings > 0
-                  ? 'text-green-600'
-                  : netSavings < 0
-                    ? 'text-red-500'
-                    : 'text-muted-foreground'
-              }
-            >
-              {netSavings > 0 ? '+' : ''}S${netSavings.toFixed(2)}
-            </span>
-          </div>
+      <section className="rounded-2xl overflow-hidden border border-border shadow-sm">
+        <div className="bg-gradient-to-r from-navy to-navy-light px-4 py-3">
+          <h2 className="text-sm font-bold text-white">Trip Verdict</h2>
         </div>
-
-        {hasTotals && (
-          <div
-            className={`rounded-md px-3 py-2.5 text-sm text-center font-medium ${
-              netSavings > 0
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-            }`}
-          >
-            {netSavings > 0
-              ? `✓ Worth it — you save S$${netSavings.toFixed(2)} per person`
-              : `✗ Not worth it yet`}
+        <div className="bg-card p-4 space-y-3">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Grocery savings (before trip)</span>
+              <span className={grocerySavings > 0 ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
+                {grocerySavings > 0 ? `S$${grocerySavings.toFixed(2)}` : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Transport cost ({transport === 'drive' ? 'round trip' : 'per person × 2'}, total)
+              </span>
+              <span className="text-destructive font-semibold">−S${transportCostSGDTotal.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between font-bold">
+              <span>Net savings per trip</span>
+              <span className={
+                netSavings > 0 ? 'text-emerald-600' : netSavings < 0 ? 'text-destructive' : 'text-muted-foreground'
+              }>
+                {netSavings > 0 ? '+' : ''}S${netSavings.toFixed(2)}
+              </span>
+            </div>
           </div>
-        )}
 
-        {breakEvenSGD > 0 && (
-          <p className="text-xs text-muted-foreground text-center">
-            Break-even: spend at least{' '}
-            <strong className="text-foreground">S${Math.ceil(breakEvenSGD)}</strong> in JB to cover trip costs
-          </p>
-        )}
+          {hasTotals && (
+            <div className={`rounded-xl px-4 py-3 text-sm text-center font-semibold ${
+              netSavings > 0
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-red-50 text-destructive border border-red-200'
+            }`}>
+              {netSavings > 0
+                ? `✓ Worth it — you save S$${netSavings.toFixed(2)} per person`
+                : `✗ Not worth it yet`}
+            </div>
+          )}
 
-        {rate && (
-          <p className="text-xs text-muted-foreground text-right">
-            Rate: 1 SGD = {rate.toFixed(4)} MYR
-          </p>
-        )}
+          {breakEvenSGD > 0 && (
+            <p className="text-xs text-muted-foreground text-center">
+              Break-even: spend at least{' '}
+              <strong className="text-foreground">S${Math.ceil(breakEvenSGD)}</strong> in JB to cover trip costs
+            </p>
+          )}
+
+          {rate && (
+            <p className="text-xs text-muted-foreground text-right">
+              Rate: 1 SGD = {rate.toFixed(4)} MYR
+            </p>
+          )}
+        </div>
       </section>
     </div>
   )

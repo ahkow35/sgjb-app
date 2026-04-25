@@ -234,27 +234,31 @@ function SubmitPageInner() {
       {/* Step indicators */}
       {step !== 'done' && (
         <div className="flex items-center gap-2 mb-6">
-          {(['product', 'store', 'price'] as const).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div
-                className={`h-6 w-6 rounded-full text-xs font-medium flex items-center justify-center ${
-                  step === s
-                    ? 'bg-primary text-primary-foreground'
-                    : ['store', 'price'].indexOf(step) > i
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {i + 1}
+          {(['product', 'store', 'price'] as const).map((s, i) => {
+            const stepOrder = ['product', 'store', 'price']
+            const currentIdx = stepOrder.indexOf(step as string)
+            const isCompleted = i < currentIdx
+            const isActive = step === s
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <div
+                  className={`h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
+                    isActive
+                      ? 'bg-navy text-white'
+                      : isCompleted
+                        ? 'bg-gold text-white'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {isCompleted ? '✓' : i + 1}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? 'text-navy' : 'text-muted-foreground'}`}>
+                  {s === 'product' ? 'Product' : s === 'store' ? 'Store' : 'Price'}
+                </span>
+                {i < 2 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
               </div>
-              <span
-                className={`text-xs ${step === s ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
-              >
-                {s === 'product' ? 'Product' : s === 'store' ? 'Store' : 'Price'}
-              </span>
-              {i < 2 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
