@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useCurrency } from '@/contexts/CurrencyContext'
-import { convert, format } from '@/lib/currency'
+import { convert, format, formatPerUnit } from '@/lib/currency'
 import { PriceTrendSparkline } from './PriceTrendSparkline'
 
 interface PriceEntry {
@@ -90,7 +90,7 @@ export function PriceHistoryDropdown({ productId, initialEntries }: Props) {
                   <p className="font-semibold">{displayPrice(entry)}</p>
                   {entry.price_per_unit != null && (
                     <p className="text-muted-foreground">
-                      {format(convert(entry.price_per_unit, entry.currency, currency, rate), currency)}/{entry.unit}
+                      {formatPerUnit(convert(entry.price_per_unit, entry.currency, currency, rate), currency)}/{entry.unit}
                     </p>
                   )}
                 </div>

@@ -554,12 +554,15 @@ function SubmitPageInner() {
 
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground mb-1 block">Quantity</label>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Package size
+              </label>
               <input
                 className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                 type="number"
                 min="0.001"
                 step="any"
+                placeholder="e.g. 250"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
               />
@@ -579,6 +582,9 @@ function SubmitPageInner() {
               </select>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Enter the package contents — e.g. a 250ml drink → <strong>250 ml</strong>; a 1kg bag of rice → <strong>1 kg</strong>
+          </p>
 
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Date observed *</label>
