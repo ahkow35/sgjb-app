@@ -30,7 +30,7 @@ export function ProductCard({ product }: Props) {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <Link href={`/products/${product.id}`} className="min-w-0">
+              <Link href={`/products/${product.id}`} className="min-w-0 hover:underline">
                 <p className="text-sm font-semibold leading-snug text-foreground line-clamp-2">
                   {product.name}
                 </p>
@@ -39,6 +39,7 @@ export function ProductCard({ product }: Props) {
                 productId={product.id}
                 productName={product.name}
                 brand={product.brand}
+                unitType={product.unit_type}
                 className="shrink-0"
               />
             </div>
@@ -51,9 +52,11 @@ export function ProductCard({ product }: Props) {
                   {product.category}
                 </span>
               )}
-              <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">
-                {product.unit_type}
-              </span>
+              {product.unit_type && (
+                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">
+                  {product.unit_type}
+                </span>
+              )}
             </div>
           </div>
         </div>

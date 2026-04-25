@@ -7,6 +7,8 @@ export interface CartItem {
   productName: string
   brand: string
   quantity: number
+  unitQty?: number   // package size amount (e.g. 500 for 500ml)
+  unit?: string      // unit label (e.g. 'ml', 'g', 'each')
 }
 
 interface CartContextValue {
@@ -14,6 +16,7 @@ interface CartContextValue {
   add: (item: Omit<CartItem, 'quantity'>) => void
   remove: (productId: string) => void
   updateQty: (productId: string, quantity: number) => void
+  updateItem: (productId: string, updates: Partial<Pick<CartItem, 'unitQty' | 'unit'>>) => void
   clear: () => void
 }
 
@@ -22,6 +25,7 @@ const CartContext = createContext<CartContextValue>({
   add: () => {},
   remove: () => {},
   updateQty: () => {},
+  updateItem: () => {},
   clear: () => {},
 })
 
@@ -71,12 +75,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
+  function updateItem(productId: string, updates: Partial<Pick<CartItem, 'unitQty' | 'unit'>>) {
+    setItems((prev) =>
+      prev.map((i) => (i.productId === productId ? { ...i, ...updates } : i)),
+    )
+  }
+
   function clear() {
     setItems([])
   }
 
   return (
-    <CartContext.Provider value={{ items, add, remove, updateQty, clear }}>
+    <CartContext.Provider value={{ items, add, remove, updateQty, updateItem, clear }}>
       {children}
     </CartContext.Provider>
   )

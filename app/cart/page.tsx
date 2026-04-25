@@ -24,7 +24,9 @@ interface ExchangeRate {
 }
 
 export default function CartPage() {
-  const { items, remove, updateQty, clear } = useCart()
+  const { items, remove, updateQty, updateItem, clear } = useCart()
+
+  const ALL_UNITS = ['each', 'pack', 'pcs', 'tablet', 'capsule', 'sachet', 'g', 'kg', 'ml', 'L']
   const [prices, setPrices] = useState<Map<string, ProductPrices>>(new Map())
   const [rate, setRate] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -163,29 +165,52 @@ export default function CartPage() {
               )}
 
               {/* Qty controls */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => updateQty(item.productId, item.quantity - 1)}
-                  className="rounded-md border h-7 w-7 flex items-center justify-center hover:bg-muted"
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10)
-                    if (!isNaN(val) && val > 0) updateQty(item.productId, val)
-                  }}
-                  className="w-12 text-center text-sm font-medium rounded-md border border-border bg-background py-0.5 outline-none focus:ring-1 focus:ring-primary/30"
-                />
-                <button
-                  onClick={() => updateQty(item.productId, item.quantity + 1)}
-                  className="rounded-md border h-7 w-7 flex items-center justify-center hover:bg-muted"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => updateQty(item.productId, item.quantity - 1)}
+                    className="rounded-md border h-7 w-7 flex items-center justify-center hover:bg-muted"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10)
+                      if (!isNaN(val) && val > 0) updateQty(item.productId, val)
+                    }}
+                    className="w-12 text-center text-sm font-medium rounded-md border border-border bg-background py-0.5 outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  <button
+                    onClick={() => updateQty(item.productId, item.quantity + 1)}
+                    className="rounded-md border h-7 w-7 flex items-center justify-center hover:bg-muted"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+                {/* Unit size */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">×</span>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="any"
+                    value={item.unitQty ?? 1}
+                    onChange={(e) => updateItem(item.productId, { unitQty: Number(e.target.value) })}
+                    className="w-14 text-center text-xs rounded-md border border-border bg-background py-0.5 outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  <select
+                    value={item.unit ?? 'each'}
+                    onChange={(e) => updateItem(item.productId, { unit: e.target.value })}
+                    className="text-xs rounded-md border border-border bg-background px-1 py-0.5 outline-none focus:ring-1 focus:ring-primary/30"
+                  >
+                    {ALL_UNITS.map((u) => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </li>
           )
