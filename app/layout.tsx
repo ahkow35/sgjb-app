@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import './globals.css'
 import { BottomNav } from '@/components/BottomNav'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
 import { CartProvider } from '@/lib/cart-context'
 import { SessionProvider } from '@/components/SessionProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+})
 
 export const metadata: Metadata = {
   title: 'SGJB — SG & JB Price Comparison',
@@ -16,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#1B2A4A',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -25,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-background`}>
+      <body className={`${outfit.className} bg-background`}>
         <SessionProvider>
           <CurrencyProvider>
             <CartProvider>

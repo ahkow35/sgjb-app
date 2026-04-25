@@ -12,9 +12,7 @@ const config: Config = {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       colors: {
@@ -51,6 +49,16 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        gold: {
+          DEFAULT: "#C9A84C",
+          light: "#F5E9C8",
+          dark: "#A07830",
+        },
+        navy: {
+          DEFAULT: "#1B2A4A",
+          light: "#243B6E",
+          dark: "#111D33",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -58,13 +66,13 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
-        'scan-line': {
-          '0%, 100%': { top: '0%' },
-          '50%': { top: '100%' },
+        "scan-line": {
+          "0%, 100%": { top: "0%" },
+          "50%": { top: "100%" },
         },
       },
       animation: {
-        'scan-line': 'scan-line 1.5s ease-in-out infinite',
+        "scan-line": "scan-line 1.5s ease-in-out infinite",
       },
     },
   },
