@@ -59,14 +59,12 @@ export default function CartPage() {
   // Totals
   let totalSGD = 0
   let totalMYR = 0
-  let itemsWithBothPrices = 0
 
   for (const item of items) {
     const p = prices.get(item.productId)
     if (!p) continue
     if (p.sgd) totalSGD += p.sgd.price * item.quantity
     if (p.myr) totalMYR += p.myr.price * item.quantity
-    if (p.sgd && p.myr) itemsWithBothPrices++
   }
 
   // Savings: JB cost in SGD vs SG cost
