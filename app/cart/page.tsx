@@ -170,7 +170,16 @@ export default function CartPage() {
                 >
                   <Minus className="h-3 w-3" />
                 </button>
-                <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    if (!isNaN(val) && val > 0) updateQty(item.productId, val)
+                  }}
+                  className="w-12 text-center text-sm font-medium rounded-md border border-border bg-background py-0.5 outline-none focus:ring-1 focus:ring-primary/30"
+                />
                 <button
                   onClick={() => updateQty(item.productId, item.quantity + 1)}
                   className="rounded-md border h-7 w-7 flex items-center justify-center hover:bg-muted"
