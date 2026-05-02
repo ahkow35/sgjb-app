@@ -1,10 +1,13 @@
 import { db, products, priceEntries, stores } from '@/lib/db'
-import { eq, and, inArray, sql, SQL } from 'drizzle-orm'
+import { users } from '@/lib/db/schema'
+import { eq, and, inArray, sql, SQL, desc } from 'drizzle-orm'
 import { buildProductSearchQuery } from '@/app/api/products/utils'
 import { ProductCard } from '@/components/ProductCard'
 import { CurrencyToggle } from '@/components/CurrencyToggle'
 import { SearchBar } from '@/components/SearchBar'
 import { Suspense } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 interface SearchParams { q?: string; category?: string }
 
@@ -38,6 +41,7 @@ async function getProducts(q: string, category: string) {
     })
       .from(products)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(products.createdAt))
       .limit(30)
   } catch (e) {
     console.error('[products] DB query error:', String(e))
@@ -46,7 +50,7 @@ async function getProducts(q: string, category: string) {
 
   if (productList.length === 0) return []
 
-  // Fetch best SGD + MYR price (with store, date, package size) per product
+  // Fetch best SGD + MYR price (with store, date, package size, submitter) per product
   const ids = productList.map((p) => p.id)
   const priceRows = await db
     .select({
@@ -57,22 +61,25 @@ async function getProducts(q: string, category: string) {
       dateObserved: priceEntries.dateObserved,
       quantity: priceEntries.quantity,
       unit: priceEntries.unit,
+      submitterEmail: users.email,
     })
     .from(priceEntries)
     .innerJoin(stores, eq(priceEntries.storeId, stores.id))
+    .leftJoin(users, eq(priceEntries.submittedBy, users.id))
     .where(inArray(priceEntries.productId, ids))
 
   const priceMap = new Map<string, {
     sgd: number | null; sgdStore: string | null; sgdDate: string | null
-    sgdQty: string | null; sgdUnit: string | null
+    sgdQty: string | null; sgdUnit: string | null; sgdBy: string | null
     myr: number | null; myrStore: string | null; myrDate: string | null
+    myrBy: string | null
   }>()
 
   for (const row of priceRows) {
     const price = Number(row.price)
     const entry = priceMap.get(row.productId) ?? {
-      sgd: null, sgdStore: null, sgdDate: null, sgdQty: null, sgdUnit: null,
-      myr: null, myrStore: null, myrDate: null,
+      sgd: null, sgdStore: null, sgdDate: null, sgdQty: null, sgdUnit: null, sgdBy: null,
+      myr: null, myrStore: null, myrDate: null, myrBy: null,
     }
     if (row.currency === 'SGD') {
       if (entry.sgd === null || price < entry.sgd) {
@@ -81,12 +88,14 @@ async function getProducts(q: string, category: string) {
         entry.sgdDate = String(row.dateObserved)
         entry.sgdQty = String(row.quantity)
         entry.sgdUnit = row.unit
+        entry.sgdBy = emailToHandle(row.submitterEmail)
       }
     } else {
       if (entry.myr === null || price < entry.myr) {
         entry.myr = price
         entry.myrStore = row.storeName
         entry.myrDate = String(row.dateObserved)
+        entry.myrBy = emailToHandle(row.submitterEmail)
       }
     }
     priceMap.set(row.productId, entry)
@@ -99,9 +108,11 @@ async function getProducts(q: string, category: string) {
       best_sgd: px?.sgd ?? null,
       best_sgd_store: px?.sgdStore ?? null,
       best_sgd_date: px?.sgdDate ?? null,
+      best_sgd_by: px?.sgdBy ?? null,
       best_myr: px?.myr ?? null,
       best_myr_store: px?.myrStore ?? null,
       best_myr_date: px?.myrDate ?? null,
+      best_myr_by: px?.myrBy ?? null,
       // Package size from cheapest SGD entry (fallback: skip)
       pkg_qty: px?.sgdQty ?? null,
       pkg_unit: px?.sgdUnit ?? null,
@@ -109,10 +120,27 @@ async function getProducts(q: string, category: string) {
   })
 }
 
+function emailToHandle(email: string | null): string | null {
+  if (!email) return null
+  const prefix = email.split('@')[0]?.replace(/\d+$/, '') ?? ''
+  if (!prefix) return null
+  return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+}
+
+async function getStoreOptions() {
+  return db
+    .select({ id: stores.id, name: stores.name, country: stores.country })
+    .from(stores)
+    .orderBy(stores.country, stores.name)
+}
+
 export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
   const q = searchParams.q ?? ''
   const category = searchParams.category ?? ''
-  const productList = await getProducts(q, category)
+  const [productList, storeOptions] = await Promise.all([
+    getProducts(q, category),
+    getStoreOptions(),
+  ])
 
   return (
     <div>
@@ -140,11 +168,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               bestSgd={p.best_sgd}
               bestSgdStore={p.best_sgd_store}
               bestSgdDate={p.best_sgd_date}
+              bestSgdBy={p.best_sgd_by}
               bestMyr={p.best_myr}
               bestMyrStore={p.best_myr_store}
               bestMyrDate={p.best_myr_date}
+              bestMyrBy={p.best_myr_by}
               pkgQty={p.pkg_qty}
               pkgUnit={p.pkg_unit}
+              storeOptions={storeOptions}
             />
           ))}
         </div>

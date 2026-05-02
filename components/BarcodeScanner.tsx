@@ -55,18 +55,36 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
             setStatus('looking_up')
             controls.stop()
 
+            const ac = new AbortController()
+            const timeoutId = setTimeout(() => ac.abort(), 8000)
             try {
-              const res = await fetch(`/api/barcode?code=${encodeURIComponent(barcode)}`)
+              const res = await fetch(
+                `/api/barcode?code=${encodeURIComponent(barcode)}`,
+                { signal: ac.signal },
+              )
+              if (!res.ok) {
+                console.error('[scanner] /api/barcode returned', res.status)
+                setError(`Lookup failed (${res.status}). Adding as new product…`)
+                setStatus('error')
+                setTimeout(() => onNotFound(barcode), 1200)
+                return
+              }
               const data: ScanResult = await res.json()
-
               if (data.product) {
                 onProduct(data.product)
               } else {
                 onNotFound(barcode)
               }
-            } catch {
-              // Even if lookup fails, pass the raw barcode back
-              onNotFound(barcode)
+            } catch (e) {
+              console.error('[scanner] lookup failed', e)
+              const msg = e instanceof Error && e.name === 'AbortError'
+                ? 'Lookup timed out. Adding as new product…'
+                : 'Lookup failed. Adding as new product…'
+              setError(msg)
+              setStatus('error')
+              setTimeout(() => onNotFound(barcode), 1200)
+            } finally {
+              clearTimeout(timeoutId)
             }
           },
         )
@@ -78,8 +96,23 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
           controls.stop()
         }
       } catch (e) {
+        console.error('[scanner] camera init failed', e)
         if (!stopped) {
-          setError(e instanceof Error ? e.message : 'Camera unavailable')
+          let msg = 'Camera unavailable'
+          if (e instanceof Error) {
+            if (e.name === 'NotAllowedError' || /permission/i.test(e.message)) {
+              msg = 'Camera permission denied. Enable it in your browser settings.'
+            } else if (e.name === 'NotFoundError') {
+              msg = 'No camera found on this device.'
+            } else if (e.name === 'NotReadableError') {
+              msg = 'Camera is in use by another app.'
+            } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+              msg = 'Camera requires HTTPS. Open this site over a secure connection.'
+            } else {
+              msg = e.message
+            }
+          }
+          setError(msg)
           setStatus('error')
         }
       }

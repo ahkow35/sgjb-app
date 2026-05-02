@@ -1,7 +1,11 @@
+'use client'
+import { useState } from 'react'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { AddToCartButton } from './AddToCartButton'
 import { PriceHistoryDropdown } from './PriceHistoryDropdown'
 import { ProductPriceRow } from './ProductPriceRow'
+import { AddPriceInline, type StoreOption } from './AddPriceInline'
 
 interface Product {
   id: string
@@ -17,19 +21,25 @@ interface Props {
   bestSgd?: number | null
   bestSgdStore?: string | null
   bestSgdDate?: string | null
+  bestSgdBy?: string | null
   bestMyr?: number | null
   bestMyrStore?: string | null
   bestMyrDate?: string | null
+  bestMyrBy?: string | null
   pkgQty?: string | null
   pkgUnit?: string | null
+  storeOptions?: StoreOption[]
 }
 
 export function ProductCard({
   product,
-  bestSgd, bestSgdStore, bestSgdDate,
-  bestMyr, bestMyrStore, bestMyrDate,
+  bestSgd, bestSgdStore, bestSgdDate, bestSgdBy,
+  bestMyr, bestMyrStore, bestMyrDate, bestMyrBy,
   pkgQty, pkgUnit,
+  storeOptions = [],
 }: Props) {
+  const [showAddPrice, setShowAddPrice] = useState(false)
+
   // "425g · Groceries" — skip trivial "1 each"
   const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
   const subtitle = [
@@ -56,13 +66,22 @@ export function ProductCard({
                   {product.name}
                 </p>
               </Link>
-              <AddToCartButton
-                productId={product.id}
-                productName={product.name}
-                brand={product.brand}
-                unitType={product.unit_type}
-                className="shrink-0"
-              />
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setShowAddPrice((v) => !v)}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                  aria-label="Add latest price"
+                  title="Add latest price"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <AddToCartButton
+                  productId={product.id}
+                  productName={product.name}
+                  brand={product.brand}
+                  unitType={product.unit_type}
+                />
+              </div>
             </div>
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
@@ -76,10 +95,22 @@ export function ProductCard({
         bestSgd={bestSgd ?? null}
         bestSgdStore={bestSgdStore ?? null}
         bestSgdDate={bestSgdDate ?? null}
+        bestSgdBy={bestSgdBy ?? null}
         bestMyr={bestMyr ?? null}
         bestMyrStore={bestMyrStore ?? null}
         bestMyrDate={bestMyrDate ?? null}
+        bestMyrBy={bestMyrBy ?? null}
       />
+
+      {/* Inline add-price form */}
+      {showAddPrice && (
+        <AddPriceInline
+          productId={product.id}
+          unitType={product.unit_type}
+          stores={storeOptions}
+          onClose={() => setShowAddPrice(false)}
+        />
+      )}
 
       {/* Full price history */}
       <PriceHistoryDropdown productId={product.id} />

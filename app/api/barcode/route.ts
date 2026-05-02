@@ -56,16 +56,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ found: true, product: existing })
   }
 
-  // 2. Fetch Open Food Facts
+  // 2. Fetch Open Food Facts (with 5s timeout)
   let offData: OFFResponse
+  const ac = new AbortController()
+  const timeoutId = setTimeout(() => ac.abort(), 5000)
   try {
     const res = await fetch(
       `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`,
-      { next: { revalidate: 3600 } },
+      { next: { revalidate: 3600 }, signal: ac.signal },
     )
+    if (!res.ok) {
+      console.error('[barcode] OFF returned', res.status, 'for', code)
+      return NextResponse.json({ found: false, product: null, source: 'off_http_error' })
+    }
     offData = await res.json()
-  } catch {
-    return NextResponse.json({ found: false, product: null, source: 'error' })
+  } catch (error) {
+    console.error('[barcode] OFF fetch failed', { code, error: String(error) })
+    return NextResponse.json({ found: false, product: null, source: 'off_network_error' })
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (offData.status !== 1 || !offData.product) {
@@ -97,7 +106,8 @@ export async function GET(req: NextRequest) {
         image_url: products.imageUrl,
       })
     return NextResponse.json({ found: false, product: created, source: 'openfoodfacts' })
-  } catch {
+  } catch (error) {
+    console.error('[barcode] insert failed (race or constraint)', { code, error: String(error) })
     // If insert fails (race condition duplicate), try fetching again
     const [retry] = await db
       .select({
