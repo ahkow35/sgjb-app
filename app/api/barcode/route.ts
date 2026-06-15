@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, products } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { auth } from '@/auth'
 
 interface OFFProduct {
   product_name?: string
@@ -54,6 +55,11 @@ export async function GET(req: NextRequest) {
 
   if (existing) {
     return NextResponse.json({ found: true, product: existing })
+  }
+
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Sign in required to create barcode products' }, { status: 401 })
   }
 
   // 2. Fetch Open Food Facts (with 5s timeout)

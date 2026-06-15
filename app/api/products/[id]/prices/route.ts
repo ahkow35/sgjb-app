@@ -14,6 +14,8 @@ export async function GET(
       quantity: priceEntries.quantity,
       unit: priceEntries.unit,
       price_per_unit: priceEntries.pricePerUnit,
+      source: priceEntries.source,
+      submitted_by: priceEntries.submittedBy,
       date_observed: priceEntries.dateObserved,
       created_at: priceEntries.createdAt,
       stores: {

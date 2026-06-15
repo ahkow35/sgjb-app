@@ -14,6 +14,7 @@ export const countryEnum = pgEnum('country', ['SG', 'MY'])
 export const storeTypeEnum = pgEnum('store_type', ['supermarket', 'pharmacy', 'petrol'])
 export const unitTypeEnum = pgEnum('unit_type', ['weight', 'each', 'volume'])
 export const currencyEnum = pgEnum('currency_type', ['SGD', 'MYR'])
+export const priceSourceEnum = pgEnum('price_source', ['manual', 'barcode', 'scraper', 'admin'])
 
 export const stores = pgTable('stores', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -44,6 +45,7 @@ export const priceEntries = pgTable('price_entries', {
   quantity: numeric('quantity', { precision: 10, scale: 3 }).notNull().default('1'),
   unit: text('unit').notNull().default('each'),
   pricePerUnit: numeric('price_per_unit', { precision: 10, scale: 4 }),
+  source: priceSourceEnum('source').notNull().default('manual'),
   submittedBy: uuid('submitted_by'),
   dateObserved: date('date_observed').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

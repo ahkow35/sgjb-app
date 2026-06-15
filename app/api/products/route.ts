@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, products } from '@/lib/db'
 import { eq, and, sql, SQL } from 'drizzle-orm'
 import { buildProductSearchQuery } from './utils'
+import { auth } from '@/auth'
 
-// NOTE: This endpoint has no auth guard. RLS policy "Anyone can add products" no longer
-// applies (no RLS without Supabase). This must not go live without Phase 9 auth.
+const UNIT_TYPES = new Set(['weight', 'each', 'volume'])
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const query = searchParams.get('q') ?? ''
@@ -42,21 +43,34 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  }
+
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
   const { name, brand, category, unit_type, barcode } = body
 
   if (!name || !unit_type) {
     return NextResponse.json({ error: 'name and unit_type are required' }, { status: 400 })
   }
+  if (typeof unit_type !== 'string' || !UNIT_TYPES.has(unit_type)) {
+    return NextResponse.json({ error: 'unit_type must be weight, each, or volume' }, { status: 400 })
+  }
 
   try {
     const [data] = await db.insert(products)
       .values({
-        name,
-        brand: brand ?? '',
-        category: category ?? '',
-        unitType: unit_type,
-        barcode: barcode ?? null,
+        name: String(name),
+        brand: brand ? String(brand) : '',
+        category: category ? String(category) : '',
+        unitType: unit_type as 'weight' | 'each' | 'volume',
+        barcode: barcode ? String(barcode) : null,
       })
       .returning()
 

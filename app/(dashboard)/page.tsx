@@ -7,6 +7,8 @@ import { fetchPetrolPrices, CACHE_KEY as PETROL_KEY } from '@/lib/petrol'
 import type { CachedRate } from '@/lib/exchange'
 import type { PetrolPrices } from '@/lib/petrol'
 
+export const dynamic = 'force-dynamic'
+
 async function getExchangeRate(): Promise<CachedRate> {
   const [row] = await db.select().from(liveData).where(eq(liveData.key, EX_KEY)).limit(1)
   if (row?.value) return row.value as CachedRate

@@ -6,6 +6,10 @@ jest.mock('@/contexts/CurrencyContext', () => ({
   useCurrency: () => ({ currency: 'SGD', rate: 3.5 }),
 }))
 
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({ data: null }),
+}))
+
 describe('PriceHistoryDropdown', () => {
   it('renders toggle button', () => {
     render(<PriceHistoryDropdown productId="test-id" />)
