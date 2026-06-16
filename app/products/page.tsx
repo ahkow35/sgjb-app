@@ -61,7 +61,7 @@ async function getProducts(q: string, category: string) {
       dateObserved: priceEntries.dateObserved,
       quantity: priceEntries.quantity,
       unit: priceEntries.unit,
-      submitterEmail: users.email,
+      submitterName: users.displayName,
     })
     .from(priceEntries)
     .innerJoin(stores, eq(priceEntries.storeId, stores.id))
@@ -88,14 +88,14 @@ async function getProducts(q: string, category: string) {
         entry.sgdDate = String(row.dateObserved)
         entry.sgdQty = String(row.quantity)
         entry.sgdUnit = row.unit
-        entry.sgdBy = emailToHandle(row.submitterEmail)
+        entry.sgdBy = toHandle(row.submitterName)
       }
     } else {
       if (entry.myr === null || price < entry.myr) {
         entry.myr = price
         entry.myrStore = row.storeName
         entry.myrDate = String(row.dateObserved)
-        entry.myrBy = emailToHandle(row.submitterEmail)
+        entry.myrBy = toHandle(row.submitterName)
       }
     }
     priceMap.set(row.productId, entry)
@@ -120,11 +120,9 @@ async function getProducts(q: string, category: string) {
   })
 }
 
-function emailToHandle(email: string | null): string | null {
-  if (!email) return null
-  const prefix = email.split('@')[0]?.replace(/\d+$/, '') ?? ''
-  if (!prefix) return null
-  return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+function toHandle(name: string | null): string | null {
+  const trimmed = name?.trim()
+  return trimmed ? trimmed : null
 }
 
 async function getStoreOptions() {

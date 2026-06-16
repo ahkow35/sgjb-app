@@ -53,10 +53,24 @@ export const priceEntries = pgTable('price_entries', {
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
-  email: text('email').notNull().unique(),
+  // Email is no longer used for login (phone + PIN only). Kept nullable and
+  // optional for future receipts/export per the household-basket spec.
+  email: text('email').unique(),
+  phoneNumber: text('phone_number').unique(),
+  // Stores the bcrypt hash of the 6-digit PIN (legacy rows hold an old password hash).
   passwordHash: text('password_hash').notNull(),
+  displayName: text('display_name'),
   submissionCount: integer('submission_count').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Brute-force protection for phone + PIN login. Keyed by phone number; Vercel
+// serverless has no shared in-memory state, so attempts live in the DB.
+export const loginAttempts = pgTable('login_attempts', {
+  phoneNumber: text('phone_number').primaryKey(),
+  failedCount: integer('failed_count').notNull().default(0),
+  lockedUntil: timestamp('locked_until'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 export const liveData = pgTable('live_data', {

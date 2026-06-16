@@ -3,37 +3,54 @@ import Credentials from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { db, users } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { normalizeToE164, isValidPin, type Country } from '@/lib/phone'
+import { isLocked, recordFailure, clearAttempts } from '@/lib/login-attempts'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
+      id: 'phone-pin',
+      name: 'Phone',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        country: { label: 'Country', type: 'text' },
+        phone: { label: 'Mobile number', type: 'tel' },
+        pin: { label: 'PIN', type: 'password' },
       },
       async authorize(credentials) {
-        const email = (credentials?.email as string | undefined)?.toLowerCase().trim()
-        const password = credentials?.password as string | undefined
-        if (!email || !password) return null
+        const country = credentials?.country as Country | undefined
+        const phoneInput = credentials?.phone as string | undefined
+        const pin = credentials?.pin as string | undefined
+        if (!country || !phoneInput || !pin) return null
+
+        const phone = normalizeToE164(country, phoneInput)
+        if (!phone || !isValidPin(pin)) return null
+
+        // Locked out → fail without revealing why or escalating further.
+        if (await isLocked(phone)) return null
 
         const [user] = await db
           .select({
             id: users.id,
-            email: users.email,
+            phoneNumber: users.phoneNumber,
             passwordHash: users.passwordHash,
+            displayName: users.displayName,
             submissionCount: users.submissionCount,
           })
           .from(users)
-          .where(eq(users.email, email))
+          .where(eq(users.phoneNumber, phone))
           .limit(1)
 
-        if (!user) return null
-        const valid = await compare(password, user.passwordHash)
-        if (!valid) return null
+        // Unknown number and wrong PIN are treated identically (no enumeration),
+        // and both count toward the lockout.
+        if (!user || !(await compare(pin, user.passwordHash))) {
+          await recordFailure(phone)
+          return null
+        }
 
+        await clearAttempts(phone)
         return {
           id: user.id,
-          email: user.email,
+          name: user.displayName ?? undefined,
           submissionCount: user.submissionCount,
         }
       },

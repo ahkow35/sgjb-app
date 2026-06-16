@@ -5,6 +5,12 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 type Tab = 'signin' | 'signup'
+type Country = 'SG' | 'MY'
+
+const COUNTRIES: { value: Country; label: string }[] = [
+  { value: 'SG', label: '🇸🇬 +65' },
+  { value: 'MY', label: '🇲🇾 +60' },
+]
 
 function AuthPageInner() {
   const router = useRouter()
@@ -12,38 +18,52 @@ function AuthPageInner() {
   const callbackUrl = searchParams.get('callbackUrl') ?? '/'
 
   const [tab, setTab] = useState<Tab>('signin')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [country, setCountry] = useState<Country>('SG')
+  const [phone, setPhone] = useState('')
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  async function completeSignIn() {
+    const result = await signIn('phone-pin', { country, phone, pin, redirect: false })
+    if (result?.error) {
+      setError('Incorrect mobile number or PIN — or too many attempts, try again later')
+      return false
+    }
+    router.push(callbackUrl)
+    router.refresh()
+    return true
+  }
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    await completeSignIn()
     setLoading(false)
-    if (result?.error) {
-      setError('Incorrect email or password')
-    } else {
-      router.push(callbackUrl)
-      router.refresh()
-    }
   }
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (!/^\d{6}$/.test(pin)) {
+      setError('PIN must be exactly 6 digits')
+      return
+    }
+    if (pin !== confirmPin) {
+      setError('PINs do not match')
+      return
+    }
+
+    setLoading(true)
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ country, phone, pin, display_name: displayName }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -51,22 +71,15 @@ function AuthPageInner() {
         setLoading(false)
         return
       }
-      // Auto sign in after successful registration
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-      setLoading(false)
-      if (result?.error) {
+      // Auto sign in after successful registration.
+      const ok = await completeSignIn()
+      if (!ok) {
         setTab('signin')
         setError('Account created — please sign in')
-      } else {
-        router.push(callbackUrl)
-        router.refresh()
       }
     } catch {
       setError('Something went wrong')
+    } finally {
       setLoading(false)
     }
   }
@@ -100,30 +113,75 @@ function AuthPageInner() {
 
         <form onSubmit={tab === 'signin' ? handleSignIn : handleSignUp} className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Email</label>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="you@example.com"
-            />
+            <label className="text-xs text-muted-foreground block mb-1">Mobile number</label>
+            <div className="flex gap-2">
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value as Country)}
+                className="rounded-xl border bg-background px-2 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                aria-label="Country code"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+              <input
+                type="tel"
+                required
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="flex-1 rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder={country === 'SG' ? '9123 4567' : '12 345 6789'}
+              />
+            </div>
           </div>
+
+          {tab === 'signup' && (
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Name (optional)</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder="What your household sees"
+              />
+            </div>
+          )}
+
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Password</label>
+            <label className="text-xs text-muted-foreground block mb-1">6-digit PIN</label>
             <input
               type="password"
               required
+              inputMode="numeric"
               autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder={tab === 'signup' ? 'At least 8 characters' : '••••••••'}
+              maxLength={6}
+              pattern="\d{6}"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+              className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="••••••"
             />
           </div>
+
+          {tab === 'signup' && (
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Confirm PIN</label>
+              <input
+                type="password"
+                required
+                inputMode="numeric"
+                maxLength={6}
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/30"
+                placeholder="••••••"
+              />
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

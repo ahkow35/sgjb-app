@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import { db, priceEntries, products, stores } from '@/lib/db'
+import { db, priceEntries, products, stores, users } from '@/lib/db'
 import { eq, desc } from 'drizzle-orm'
 import Link from 'next/link'
 import { SignOutButton } from '@/components/SignOutButton'
@@ -8,6 +8,12 @@ import { SignOutButton } from '@/components/SignOutButton'
 export default async function ProfilePage() {
   const session = await auth()
   if (!session?.user) redirect('/auth?callbackUrl=/profile')
+
+  const [profile] = await db
+    .select({ phoneNumber: users.phoneNumber, displayName: users.displayName })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1)
 
   const submissions = await db
     .select({
@@ -37,7 +43,12 @@ export default async function ProfilePage() {
 
       {/* User info */}
       <div className="rounded-lg border p-4 mb-4">
-        <p className="text-sm font-medium">{session.user.email}</p>
+        <p className="text-sm font-medium">
+          {profile?.displayName || profile?.phoneNumber || 'Your account'}
+        </p>
+        {profile?.displayName && profile?.phoneNumber && (
+          <p className="text-xs text-muted-foreground">{profile.phoneNumber}</p>
+        )}
         <div className="mt-2 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
             {count} price submission{count !== 1 ? 's' : ''}
