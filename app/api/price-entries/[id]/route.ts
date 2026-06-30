@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverError } from '@/lib/api-error'
 import { db, priceEntries } from '@/lib/db'
 import { and, eq } from 'drizzle-orm'
 import { auth } from '@/auth'
@@ -42,6 +43,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json({ success: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'DELETE /api/price-entries/[id]')
   }
 }

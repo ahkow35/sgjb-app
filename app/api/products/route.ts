@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverError } from '@/lib/api-error'
 import { db, products } from '@/lib/db'
 import { eq, and, sql, SQL } from 'drizzle-orm'
 import { buildProductSearchQuery } from './utils'
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data)
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'GET /api/products')
   }
 }
 
@@ -76,6 +77,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'POST /api/products')
   }
 }

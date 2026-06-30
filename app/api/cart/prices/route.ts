@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverError } from '@/lib/api-error'
 import { db, priceEntries, stores } from '@/lib/db'
 import { eq, inArray } from 'drizzle-orm'
 
@@ -69,6 +70,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(Array.from(map.values()))
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'POST /api/cart/prices')
   }
 }

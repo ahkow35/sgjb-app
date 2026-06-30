@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverError } from '@/lib/api-error'
 import { db, priceEntries, stores, users } from '@/lib/db'
 import { eq, sql } from 'drizzle-orm'
 import { auth } from '@/auth'
@@ -76,6 +77,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(entry, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'POST /api/price-entries')
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverError } from '@/lib/api-error'
 import { db, products } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 
@@ -24,6 +25,6 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
     return NextResponse.json(product)
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return serverError(e, 'GET /api/products/[id]')
   }
 }

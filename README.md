@@ -20,6 +20,27 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Database schema changes
+
+`lib/db/schema.ts` is the **single source of truth** for the database. Apply
+changes with drizzle-kit `push` — it diffs the schema against the live DB and
+applies the difference directly. Do **not** hand-write SQL against the database;
+that is how the schema and the model silently drifted apart in the past.
+
+```bash
+# 1. edit lib/db/schema.ts
+npm run db:push      # diffs against the live DB, shows the SQL, applies it
+```
+
+- Credentials come from `.env.development.local` (loaded by `drizzle.config.ts`),
+  using `POSTGRES_URL_NON_POOLING`.
+- `push` prompts before destructive changes (dropping/renaming columns). Read the
+  proposed SQL before confirming.
+- `npm run db:studio` opens a browser DB explorer.
+- `npm run db:generate` exists for emitting versioned SQL, but the working flow is
+  `push`. The pre-`push` migration files are kept in `drizzle/_archive/` for
+  historical reference only; they are not part of the live workflow.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

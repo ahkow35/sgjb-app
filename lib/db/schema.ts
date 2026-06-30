@@ -8,7 +8,11 @@ import {
   date,
   jsonb,
   pgEnum,
+  index,
+  unique,
+  check,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const countryEnum = pgEnum('country', ['SG', 'MY'])
 export const storeTypeEnum = pgEnum('store_type', ['supermarket', 'pharmacy', 'petrol'])
@@ -25,16 +29,22 @@ export const stores = pgTable('stores', {
   url: text('url').notNull().default(''),
 })
 
-export const products = pgTable('products', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  brand: text('brand').notNull().default(''),
-  category: text('category').notNull().default(''),
-  imageUrl: text('image_url').notNull().default(''),
-  unitType: unitTypeEnum('unit_type').notNull(),
-  barcode: text('barcode'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const products = pgTable(
+  'products',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    brand: text('brand').notNull().default(''),
+    category: text('category').notNull().default(''),
+    imageUrl: text('image_url').notNull().default(''),
+    unitType: unitTypeEnum('unit_type').notNull(),
+    barcode: text('barcode'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('products_name_fts').using('gin', sql`to_tsvector('english', ${table.name})`),
+  ],
+)
 
 export const priceEntries = pgTable('price_entries', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -46,23 +56,34 @@ export const priceEntries = pgTable('price_entries', {
   unit: text('unit').notNull().default('each'),
   pricePerUnit: numeric('price_per_unit', { precision: 10, scale: 4 }),
   source: priceSourceEnum('source').notNull().default('manual'),
-  submittedBy: uuid('submitted_by'),
+  submittedBy: uuid('submitted_by').references(() => users.id, { onDelete: 'set null' }),
   dateObserved: date('date_observed').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('price_entries_submitted_by_idx').on(table.submittedBy),
+  check('price_entries_quantity_check', sql`quantity > (0)::numeric`),
+])
 
-export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  // Email is no longer used for login (phone + PIN only). Kept nullable and
-  // optional for future receipts/export per the household-basket spec.
-  email: text('email').unique(),
-  phoneNumber: text('phone_number').unique(),
-  // Stores the bcrypt hash of the 6-digit PIN (legacy rows hold an old password hash).
-  passwordHash: text('password_hash').notNull(),
-  displayName: text('display_name'),
-  submissionCount: integer('submission_count').notNull().default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    // Email is no longer used for login (phone + PIN only). Kept nullable and
+    // optional for future receipts/export per the household-basket spec.
+    email: text('email'),
+    phoneNumber: text('phone_number').unique(),
+    // Stores the bcrypt hash of the 6-digit PIN (legacy rows hold an old password hash).
+    passwordHash: text('password_hash').notNull(),
+    displayName: text('display_name'),
+    submissionCount: integer('submission_count').notNull().default(0),
+    // created_at is timestamptz in the DB (legacy); other tables use plain timestamp.
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('users_email_idx').on(table.email),
+    unique('users_email_key').on(table.email),
+  ],
+)
 
 // Brute-force protection for phone + PIN login. Keyed by phone number; Vercel
 // serverless has no shared in-memory state, so attempts live in the DB.
