@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, liveData } from '@/lib/db'
 import { fetchExchangeRate, CACHE_KEY as EX_KEY } from '@/lib/exchange'
 import { fetchPetrolPrices, CACHE_KEY as PETROL_KEY } from '@/lib/petrol'
+import { fetchSgFuelPrices, CACHE_KEY as SG_KEY } from '@/lib/sg-fuel'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -29,6 +30,16 @@ export async function GET(req: NextRequest) {
     results.petrol = 'ok'
   } catch (e) {
     results.petrol = String(e)
+  }
+
+  try {
+    const sgFuel = await fetchSgFuelPrices()
+    await db.insert(liveData)
+      .values({ key: SG_KEY, value: sgFuel, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: liveData.key, set: { value: sgFuel, updatedAt: new Date() } })
+    results.sgFuel = 'ok'
+  } catch (e) {
+    results.sgFuel = String(e)
   }
 
   return NextResponse.json(results)
