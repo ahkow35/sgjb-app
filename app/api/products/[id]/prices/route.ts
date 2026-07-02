@@ -3,6 +3,11 @@ import { serverError } from '@/lib/api-error'
 import { db, priceEntries, stores } from '@/lib/db'
 import { eq, desc } from 'drizzle-orm'
 
+// Prices change when users submit them, so this must never be cached — the Neon
+// HTTP driver fetches over `fetch()`, which Next caches by default otherwise,
+// causing newly-added prices to not appear (stale price history).
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }

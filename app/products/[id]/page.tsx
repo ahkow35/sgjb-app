@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
+// Prices are user-submitted, so always render fresh (no full-route/data cache).
+export const dynamic = 'force-dynamic'
+
 async function getProduct(id: string) {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1)
   return product ?? null
