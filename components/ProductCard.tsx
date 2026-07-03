@@ -42,6 +42,7 @@ export function ProductCard({
 }: Props) {
   const [showAddPrice, setShowAddPrice] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleted, setDeleted] = useState(false)
   const { data: session } = useSession()
   const router = useRouter()
   const isAdmin = Boolean(session?.user?.isAdmin)
@@ -55,12 +56,18 @@ export function ProductCard({
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? 'Failed to delete product')
       }
+      // Hide the card immediately, then refresh the server list so the removal
+      // survives the next navigation (router.refresh alone can lag behind the
+      // client Router Cache).
+      setDeleted(true)
       router.refresh()
     } catch (e) {
       window.alert(e instanceof Error ? e.message : 'Failed to delete product')
       setDeleting(false)
     }
   }
+
+  if (deleted) return null
 
   // "425g · Groceries" — skip trivial "1 each"
   const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
