@@ -32,6 +32,10 @@ jest.mock('@/lib/db', () => {
       id: 'price_entries.id',
       submittedBy: 'price_entries.submitted_by',
     },
+    users: {
+      id: 'users.id',
+      isAdmin: 'users.is_admin',
+    },
   }
 })
 
@@ -47,6 +51,7 @@ import {
   DELETE as deletePriceEntry,
   PATCH as patchPriceEntry,
 } from '@/app/api/price-entries/[id]/route'
+import { DELETE as deleteProduct } from '@/app/api/products/[id]/route'
 
 function jsonRequest(body: unknown): Request {
   return new Request('http://localhost/api/test', {
@@ -56,20 +61,22 @@ function jsonRequest(body: unknown): Request {
   })
 }
 
-function mockSelectEntry(submittedBy: string | null) {
-  mockDb.select.mockReturnValue({
+// Each db.select(...).from(...).where(...).limit(...) resolves to `rows`.
+function selectResult(rows: unknown[]) {
+  return {
     from: jest.fn().mockReturnValue({
       where: jest.fn().mockReturnValue({
-        limit: jest.fn().mockResolvedValue([{ submittedBy }]),
+        limit: jest.fn().mockResolvedValue(rows),
       }),
     }),
-  })
+  }
 }
 
-function mockDeleteEntry() {
+// db.delete(...).where(...).returning(...) resolves to `rows`.
+function mockDelete(rows: unknown[] = [{ id: 'row-1' }]) {
   mockDb.delete.mockReturnValue({
     where: jest.fn().mockReturnValue({
-      returning: jest.fn().mockResolvedValue([{ id: 'entry-1' }]),
+      returning: jest.fn().mockResolvedValue(rows),
     }),
   })
 }
@@ -118,9 +125,11 @@ describe('write protection', () => {
     expect(await res.json()).toEqual({ error: 'Sign in required' })
   })
 
-  it('rejects deleting another user price entry', async () => {
+  it('rejects a non-admin deleting another user price entry', async () => {
     mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-    mockSelectEntry('user-2')
+    mockDb.select
+      .mockReturnValueOnce(selectResult([{ submittedBy: 'user-2' }])) // entry lookup
+      .mockReturnValueOnce(selectResult([{ isAdmin: false }])) // admin check
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
       params: { id: 'entry-1' },
@@ -133,8 +142,8 @@ describe('write protection', () => {
 
   it('allows deleting your own price entry', async () => {
     mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
-    mockSelectEntry('user-1')
-    mockDeleteEntry()
+    mockDb.select.mockReturnValueOnce(selectResult([{ submittedBy: 'user-1' }]))
+    mockDelete()
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
       params: { id: 'entry-1' },
@@ -142,5 +151,61 @@ describe('write protection', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ success: true })
+    // Owner path short-circuits — no admin lookup needed.
+    expect(mockDb.select).toHaveBeenCalledTimes(1)
+  })
+
+  it('allows an admin to delete another user price entry (incl. scraper entries)', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'admin-1' } })
+    mockDb.select
+      .mockReturnValueOnce(selectResult([{ submittedBy: null }])) // scraper entry, no owner
+      .mockReturnValueOnce(selectResult([{ isAdmin: true }])) // admin check
+    mockDelete()
+
+    const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
+      params: { id: 'entry-1' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true })
+    expect(mockDb.delete).toHaveBeenCalled()
+  })
+
+  it('requires sign-in to delete a product', async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
+      params: { id: 'prod-1' },
+    })
+
+    expect(res.status).toBe(401)
+    expect(mockDb.delete).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-admin deleting a product', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
+    mockDb.select.mockReturnValueOnce(selectResult([{ isAdmin: false }]))
+
+    const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
+      params: { id: 'prod-1' },
+    })
+
+    expect(res.status).toBe(403)
+    expect(await res.json()).toEqual({ error: 'Admin only' })
+    expect(mockDb.delete).not.toHaveBeenCalled()
+  })
+
+  it('allows an admin to delete a product', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'admin-1' } })
+    mockDb.select.mockReturnValueOnce(selectResult([{ isAdmin: true }]))
+    mockDelete([{ id: 'prod-1' }])
+
+    const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
+      params: { id: 'prod-1' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true })
+    expect(mockDb.delete).toHaveBeenCalled()
   })
 })

@@ -105,7 +105,10 @@ export function PriceHistoryDropdown({ productId, initialEntries }: Props) {
           </div>
           <div className="divide-y">
             {entries.map((entry) => {
-              const canDelete = Boolean(session?.user?.id && entry.submitted_by === session.user.id)
+              const canDelete = Boolean(
+                session?.user?.id &&
+                  (entry.submitted_by === session.user.id || session.user.isAdmin),
+              )
 
               return (
                 <div key={entry.id} className="flex items-center justify-between px-3 py-2 text-xs">

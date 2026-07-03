@@ -35,6 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             passwordHash: users.passwordHash,
             displayName: users.displayName,
             submissionCount: users.submissionCount,
+            isAdmin: users.isAdmin,
           })
           .from(users)
           .where(eq(users.phoneNumber, phone))
@@ -52,6 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           name: user.displayName ?? undefined,
           submissionCount: user.submissionCount,
+          isAdmin: user.isAdmin,
         }
       },
     }),
@@ -62,12 +64,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id
         token.submissionCount = (user as { submissionCount?: number }).submissionCount ?? 0
+        token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false
       }
       return token
     },
     session({ session, token }) {
       if (token.id) session.user.id = token.id as string
       session.user.submissionCount = (token.submissionCount as number) ?? 0
+      session.user.isAdmin = (token.isAdmin as boolean) ?? false
       return session
     },
   },

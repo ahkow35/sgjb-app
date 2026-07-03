@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { Plus, Trash2 } from 'lucide-react'
 import { AddToCartButton } from './AddToCartButton'
 import { PriceHistoryDropdown } from './PriceHistoryDropdown'
 import { ProductPriceRow } from './ProductPriceRow'
@@ -39,6 +41,26 @@ export function ProductCard({
   storeOptions = [],
 }: Props) {
   const [showAddPrice, setShowAddPrice] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const { data: session } = useSession()
+  const router = useRouter()
+  const isAdmin = Boolean(session?.user?.isAdmin)
+
+  async function deleteProduct() {
+    if (!window.confirm(`Delete "${product.name}" and all its prices? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/products/${product.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Failed to delete product')
+      }
+      router.refresh()
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : 'Failed to delete product')
+      setDeleting(false)
+    }
+  }
 
   // "425g · Groceries" — skip trivial "1 each"
   const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
@@ -67,6 +89,17 @@ export function ProductCard({
                 </p>
               </Link>
               <div className="flex items-center gap-1 shrink-0">
+                {isAdmin && (
+                  <button
+                    onClick={deleteProduct}
+                    disabled={deleting}
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted disabled:opacity-50"
+                    aria-label="Delete product (admin)"
+                    title="Delete product (admin)"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => setShowAddPrice((v) => !v)}
                   className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"

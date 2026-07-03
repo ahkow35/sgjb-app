@@ -11,6 +11,7 @@ import {
   index,
   unique,
   check,
+  boolean,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -76,6 +77,8 @@ export const users = pgTable(
     passwordHash: text('password_hash').notNull(),
     displayName: text('display_name'),
     submissionCount: integer('submission_count').notNull().default(0),
+    // Admins can delete any price entry and any product (not just their own).
+    isAdmin: boolean('is_admin').notNull().default(false),
     // created_at is timestamptz in the DB (legacy); other tables use plain timestamp.
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },

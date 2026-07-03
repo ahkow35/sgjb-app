@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverError } from '@/lib/api-error'
+import { isAdminUser } from '@/lib/admin'
 import { db, priceEntries } from '@/lib/db'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { auth } from '@/auth'
 
 export async function PATCH() {
@@ -28,18 +29,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     if (!entry) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
-    if (entry.submittedBy !== userId) {
+
+    // Owners may delete their own entries; admins may delete any (including
+    // scraper entries, which have no submitter). Admin is re-checked against the
+    // DB, not the session token.
+    const isOwner = entry.submittedBy === userId
+    if (!isOwner && !(await isAdminUser(userId))) {
       return NextResponse.json({ error: 'You can only delete your own price entries' }, { status: 403 })
     }
 
-    const [deleted] = await db
-      .delete(priceEntries)
-      .where(and(eq(priceEntries.id, params.id), eq(priceEntries.submittedBy, userId)))
-      .returning({ id: priceEntries.id })
-
-    if (!deleted) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
+    await db.delete(priceEntries).where(eq(priceEntries.id, params.id))
 
     return NextResponse.json({ success: true })
   } catch (e) {
