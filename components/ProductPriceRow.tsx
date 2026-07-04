@@ -1,6 +1,7 @@
 'use client'
 import { Clock } from 'lucide-react'
 import { useCurrency } from '@/contexts/CurrencyContext'
+import { convert, format } from '@/lib/currency'
 
 interface Props {
   bestSgd: number | null
@@ -22,15 +23,19 @@ export function ProductPriceRow({
   bestSgd, bestSgdStore, bestSgdDate, bestSgdBy,
   bestMyr, bestMyrStore, bestMyrDate, bestMyrBy,
 }: Props) {
-  const { rate } = useCurrency()
-  const myrInSgd = bestMyr != null && rate ? bestMyr / rate : null
+  const { currency, rate } = useCurrency()
 
   if (bestSgd == null && bestMyr == null) return null
 
+  // Show both columns in the selected currency (converted) so they're directly
+  // comparable; each side's native price is shown as a subline when it differs.
+  const sgSel = bestSgd != null ? convert(bestSgd, 'SGD', currency, rate) : null
+  const jbSel = bestMyr != null ? convert(bestMyr, 'MYR', currency, rate) : null
+
   // Cheaper side gets green; only when both prices are comparable
   let cheaperSide: 'sg' | 'jb' | null = null
-  if (bestSgd != null && myrInSgd != null) {
-    cheaperSide = bestSgd <= myrInSgd ? 'sg' : 'jb'
+  if (sgSel != null && jbSel != null) {
+    cheaperSide = sgSel <= jbSel ? 'sg' : 'jb'
   }
 
   const sgPriceClass = cheaperSide === 'sg'
@@ -49,7 +54,10 @@ export function ProductPriceRow({
         </p>
         {bestSgd != null ? (
           <>
-            <p className={`text-base font-bold ${sgPriceClass}`}>S${bestSgd.toFixed(2)}</p>
+            <p className={`text-base font-bold ${sgPriceClass}`}>{format(sgSel!, currency)}</p>
+            {currency !== 'SGD' && (
+              <p className="text-xs text-muted-foreground">{format(bestSgd, 'SGD')}</p>
+            )}
             {(bestSgdDate || bestSgdBy) && (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 {bestSgdDate && <Clock className="h-3 w-3 shrink-0" />}
@@ -72,10 +80,12 @@ export function ProductPriceRow({
         </p>
         {bestMyr != null ? (
           <>
-            {myrInSgd != null && (
-              <p className={`text-base font-bold ${jbPriceClass}`}>S${myrInSgd.toFixed(2)}</p>
+            {jbSel != null && (
+              <p className={`text-base font-bold ${jbPriceClass}`}>{format(jbSel, currency)}</p>
             )}
-            <p className="text-xs text-muted-foreground">RM {bestMyr.toFixed(2)}</p>
+            {currency !== 'MYR' && (
+              <p className="text-xs text-muted-foreground">{format(bestMyr, 'MYR')}</p>
+            )}
             {(bestMyrDate || bestMyrBy) && (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 {bestMyrDate && <Clock className="h-3 w-3 shrink-0" />}
