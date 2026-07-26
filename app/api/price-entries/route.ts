@@ -3,6 +3,7 @@ import { serverError } from '@/lib/api-error'
 import { db, priceEntries, stores, users } from '@/lib/db'
 import { eq, sql } from 'drizzle-orm'
 import { auth } from '@/auth'
+import { normalizeQuantityUnit, ALLOWED_UNITS } from '@/lib/units'
 
 const USER_PRICE_SOURCES = new Set(['manual', 'barcode'])
 
@@ -39,6 +40,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'quantity must be a positive number' }, { status: 400 })
   }
 
+  const normalized = normalizeQuantityUnit(quantityNum, String(unit ?? 'each'))
+  if (!normalized) {
+    return NextResponse.json(
+      { error: `unit must be one of: ${ALLOWED_UNITS.join(', ')}` },
+      { status: 400 },
+    )
+  }
+
   const sourceValue = typeof source === 'string' && USER_PRICE_SOURCES.has(source)
     ? source as 'manual' | 'barcode'
     : 'manual'
@@ -50,7 +59,7 @@ export async function POST(req: NextRequest) {
   }
   const currency = store.country === 'MY' ? 'MYR' : 'SGD'
 
-  const pricePerUnit = quantityNum > 0 ? priceNum / quantityNum : null
+  const pricePerUnit = normalized.quantity > 0 ? priceNum / normalized.quantity : null
 
   try {
     const [entry] = await db
@@ -60,8 +69,8 @@ export async function POST(req: NextRequest) {
         storeId: String(store_id),
         price: priceNum.toFixed(2),
         currency,
-        quantity: quantityNum.toFixed(3),
-        unit: String(unit ?? 'each'),
+        quantity: normalized.quantity.toFixed(3),
+        unit: normalized.unit,
         pricePerUnit: pricePerUnit != null ? pricePerUnit.toFixed(4) : null,
         source: sourceValue,
         submittedBy: userId,

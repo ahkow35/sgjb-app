@@ -8,6 +8,7 @@ import { AddToCartButton } from './AddToCartButton'
 import { PriceHistoryDropdown } from './PriceHistoryDropdown'
 import { ProductPriceRow } from './ProductPriceRow'
 import { AddPriceInline, type StoreOption } from './AddPriceInline'
+import { formatQuantityUnit } from '@/lib/units'
 
 interface Product {
   id: string
@@ -69,10 +70,10 @@ export function ProductCard({
 
   if (deleted) return null
 
-  // "425g · Groceries" — skip trivial "1 each"
+  // "425 g · Groceries" — skip trivial "1 each"
   const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
   const subtitle = [
-    hasSize ? `${Number(pkgQty)}${pkgUnit}` : null,
+    hasSize ? formatQuantityUnit(pkgQty!, pkgUnit!) : null,
     product.category || null,
   ].filter(Boolean).join(' · ')
 
