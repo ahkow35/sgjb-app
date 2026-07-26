@@ -56,7 +56,8 @@ async function run() {
       if (saved % 20 === 0) console.log(`  Saved ${saved}/${allProducts.length}...`)
     } catch (e) {
       failed++
-      console.warn(`  Failed: ${product.name} — ${e}`)
+      const message = e instanceof Error ? e.message : String(e)
+      console.warn(`  Failed: ${product.name} — ${message}`)
     }
   }
 

@@ -475,7 +475,7 @@ async function run() {
   let failed = 0
   for (const item of allItems) {
     try {
-      await upsertScrapedProduct(item)
+      await upsertScrapedProduct(item, 'admin')
       saved++
       console.log(`  ✓ ${item.storeName}: ${item.name} (${item.currency} ${item.price})`)
     } catch (e) {

@@ -8,7 +8,10 @@ import type { ScrapedProduct } from './types'
 const sql = neon(process.env.POSTGRES_URL!)
 const db = drizzle(sql, { schema })
 
-export async function upsertScrapedProduct(item: ScrapedProduct): Promise<void> {
+export async function upsertScrapedProduct(
+  item: ScrapedProduct,
+  source: 'scraper' | 'admin' = 'scraper'
+): Promise<void> {
   // 1. Find store by name
   const [store] = await db.select()
     .from(schema.stores)
@@ -16,8 +19,7 @@ export async function upsertScrapedProduct(item: ScrapedProduct): Promise<void> 
     .limit(1)
 
   if (!store) {
-    console.warn(`Store not found: ${item.storeName}`)
-    return
+    throw new Error(`Store not found: ${item.storeName}`)
   }
 
   // 2. Find or create product (match by barcode if available, else by name+brand)
@@ -68,15 +70,30 @@ export async function upsertScrapedProduct(item: ScrapedProduct): Promise<void> 
 
   const pricePerUnit = normalized.quantity > 0 ? item.price / normalized.quantity : null
 
+  const price = String(item.price)
+  const quantity = String(normalized.quantity)
+  const unit = normalized.unit
+  const pricePerUnitStr = pricePerUnit != null ? String(pricePerUnit) : null
+
   await db.insert(schema.priceEntries)
     .values({
       productId: product.id,
       storeId: store.id,
-      price: String(item.price),
+      price,
       currency: item.currency,
-      quantity: String(normalized.quantity),
-      unit: normalized.unit,
-      pricePerUnit: pricePerUnit != null ? String(pricePerUnit) : null,
+      quantity,
+      unit,
+      pricePerUnit: pricePerUnitStr,
+      source,
       dateObserved: item.dateObserved,
+    })
+    .onConflictDoUpdate({
+      target: [
+        schema.priceEntries.productId,
+        schema.priceEntries.storeId,
+        schema.priceEntries.submittedBy,
+        schema.priceEntries.dateObserved,
+      ],
+      set: { price, quantity, unit, pricePerUnit: pricePerUnitStr, source },
     })
 }
