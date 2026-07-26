@@ -49,11 +49,13 @@ function mockStoreLookup(rows: unknown[]) {
   })
 }
 
-// db.insert(...).values(...).returning() resolves to `rows`.
+// db.insert(...).values(...).onConflictDoUpdate(...).returning() resolves to `rows`.
 function mockInsert(rows: unknown[]) {
   mockDb.insert.mockReturnValue({
     values: jest.fn().mockReturnValue({
-      returning: jest.fn().mockResolvedValue(rows),
+      onConflictDoUpdate: jest.fn().mockReturnValue({
+        returning: jest.fn().mockResolvedValue(rows),
+      }),
     }),
   })
 }
@@ -92,7 +94,7 @@ describe('POST /api/price-entries — unit normalization', () => {
   })
 
   it('normalizes 1 kg to 1000 g before storing', async () => {
-    mockInsert([{ id: 'entry-1', quantity: '1000.000', unit: 'g' }])
+    mockInsert([{ id: 'entry-1', inserted: true }])
 
     const res = await POST(jsonRequest({ ...baseBody, quantity: 1, unit: 'kg' }) as any)
 
@@ -102,5 +104,22 @@ describe('POST /api/price-entries — unit normalization', () => {
     expect(insertCall.unit).toBe('g')
     // price_per_unit computed against the normalized (canonical) quantity.
     expect(insertCall.pricePerUnit).toBe((10 / 1000).toFixed(4))
+    // New observation → submission count incremented.
+    expect(mockDb.update).toHaveBeenCalled()
+  })
+
+  it('treats a same-day resubmission as an update, not a duplicate', async () => {
+    // inserted: false ⇒ the observation key matched an existing row (xmax ≠ 0).
+    mockInsert([{ id: 'entry-1', inserted: false }])
+
+    const res = await POST(jsonRequest({ ...baseBody, quantity: 1, unit: 'kg' }) as any)
+
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.updated).toBe(true)
+    const valuesChain = mockDb.insert.mock.results[0].value.values.mock.results[0].value
+    expect(valuesChain.onConflictDoUpdate).toHaveBeenCalled()
+    // Updates must not inflate the user's submission count.
+    expect(mockDb.update).not.toHaveBeenCalled()
   })
 })

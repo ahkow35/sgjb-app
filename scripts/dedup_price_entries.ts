@@ -51,6 +51,17 @@ async function run() {
   console.log(`Duplicate groups (count > 1): ${groupCount}`)
   console.log(`Rows that would be deleted: ${rowsToDelete}`)
 
+  // Preflight for the other new constraint in this branch: db:push also adds
+  // a `price > 0` check, which fails atomically if any live row violates it.
+  const badPrice = await db.execute<{ n: string }>(
+    sql`SELECT COUNT(*) AS n FROM price_entries WHERE price <= 0`,
+  )
+  const badPriceCount = Number(badPrice.rows[0].n)
+  console.log(
+    `Rows violating the new price > 0 check: ${badPriceCount}` +
+      (badPriceCount > 0 ? '  ⚠ db:push will fail until these are fixed' : ''),
+  )
+
   if (groupCount > 0) {
     const sample = await db.execute<{
       id: string

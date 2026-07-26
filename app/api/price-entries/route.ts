@@ -62,6 +62,9 @@ export async function POST(req: NextRequest) {
   const pricePerUnit = normalized.quantity > 0 ? priceNum / normalized.quantity : null
 
   try {
+    // The observation key (product + store + user + date) makes a same-day
+    // resubmission an in-place update — the user's correction path — instead
+    // of a unique-violation 500.
     const [entry] = await db
       .insert(priceEntries)
       .values({
@@ -76,15 +79,40 @@ export async function POST(req: NextRequest) {
         submittedBy: userId,
         dateObserved: String(date_observed),
       })
-      .returning()
+      .onConflictDoUpdate({
+        target: [
+          priceEntries.productId,
+          priceEntries.storeId,
+          priceEntries.submittedBy,
+          priceEntries.dateObserved,
+        ],
+        set: {
+          price: priceNum.toFixed(2),
+          currency,
+          quantity: normalized.quantity.toFixed(3),
+          unit: normalized.unit,
+          pricePerUnit: pricePerUnit != null ? pricePerUnit.toFixed(4) : null,
+          source: sourceValue,
+        },
+      })
+      .returning({
+        id: priceEntries.id,
+        // xmax = 0 only on freshly inserted rows — distinguishes insert from update.
+        inserted: sql<boolean>`(xmax = 0)`,
+      })
 
-    // Increment submission count for logged-in user
-    await db
-      .update(users)
-      .set({ submissionCount: sql`${users.submissionCount} + 1` })
-      .where(eq(users.id, userId))
+    // Count only genuinely new observations toward the user's submission tally.
+    if (entry.inserted) {
+      await db
+        .update(users)
+        .set({ submissionCount: sql`${users.submissionCount} + 1` })
+        .where(eq(users.id, userId))
+    }
 
-    return NextResponse.json(entry, { status: 201 })
+    return NextResponse.json(
+      { id: entry.id, updated: !entry.inserted },
+      { status: entry.inserted ? 201 : 200 },
+    )
   } catch (e) {
     return serverError(e, 'POST /api/price-entries')
   }

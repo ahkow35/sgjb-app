@@ -41,6 +41,19 @@ npm run db:push      # diffs against the live DB, shows the SQL, applies it
   `push`. The pre-`push` migration files are kept in `drizzle/_archive/` for
   historical reference only; they are not part of the live workflow.
 
+### Applying the Phase 0/1 schema changes (one-time runbook)
+
+The observation-key unique constraint and the `price > 0` check need clean data
+before `push` can apply them. Run, **in this order**:
+
+```bash
+npm run db:dedup                     # dry run — review the report (dup groups + price preflight)
+npm run db:dedup -- --apply          # remove duplicate observations
+npm run db:backfill-units            # dry run — review
+npm run db:backfill-units -- --apply # canonicalize legacy kg/L rows, recompute price_per_unit
+npm run db:push                      # apply the new constraints and indexes
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
