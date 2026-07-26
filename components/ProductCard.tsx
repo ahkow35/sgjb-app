@@ -25,20 +25,23 @@ interface Props {
   bestSgdStore?: string | null
   bestSgdDate?: string | null
   bestSgdBy?: string | null
+  bestSgdQty?: string | null
+  bestSgdUnit?: string | null
+  bestSgdPerUnit?: number | null
   bestMyr?: number | null
   bestMyrStore?: string | null
   bestMyrDate?: string | null
   bestMyrBy?: string | null
-  pkgQty?: string | null
-  pkgUnit?: string | null
+  bestMyrQty?: string | null
+  bestMyrUnit?: string | null
+  bestMyrPerUnit?: number | null
   storeOptions?: StoreOption[]
 }
 
 export function ProductCard({
   product,
-  bestSgd, bestSgdStore, bestSgdDate, bestSgdBy,
-  bestMyr, bestMyrStore, bestMyrDate, bestMyrBy,
-  pkgQty, pkgUnit,
+  bestSgd, bestSgdStore, bestSgdDate, bestSgdBy, bestSgdQty, bestSgdUnit, bestSgdPerUnit,
+  bestMyr, bestMyrStore, bestMyrDate, bestMyrBy, bestMyrQty, bestMyrUnit, bestMyrPerUnit,
   storeOptions = [],
 }: Props) {
   const [showAddPrice, setShowAddPrice] = useState(false)
@@ -70,7 +73,11 @@ export function ProductCard({
 
   if (deleted) return null
 
-  // "425 g · Groceries" — skip trivial "1 each"
+  // "425 g · Groceries" — skip trivial "1 each". Package size is per-currency
+  // (SGD and MYR entries aren't guaranteed the same pack size); prefer SGD,
+  // falling back to MYR so MY-only products still show a size.
+  const pkgQty = bestSgdQty ?? bestMyrQty
+  const pkgUnit = bestSgdUnit ?? bestMyrUnit
   const hasSize = pkgQty && pkgUnit && !(Number(pkgQty) === 1 && pkgUnit === 'each')
   const subtitle = [
     hasSize ? formatQuantityUnit(pkgQty!, pkgUnit!) : null,
@@ -137,10 +144,14 @@ export function ProductCard({
         bestSgdStore={bestSgdStore ?? null}
         bestSgdDate={bestSgdDate ?? null}
         bestSgdBy={bestSgdBy ?? null}
+        bestSgdPerUnit={bestSgdPerUnit ?? null}
+        bestSgdUnit={bestSgdUnit ?? null}
         bestMyr={bestMyr ?? null}
         bestMyrStore={bestMyrStore ?? null}
         bestMyrDate={bestMyrDate ?? null}
         bestMyrBy={bestMyrBy ?? null}
+        bestMyrPerUnit={bestMyrPerUnit ?? null}
+        bestMyrUnit={bestMyrUnit ?? null}
       />
 
       {/* Inline add-price form */}

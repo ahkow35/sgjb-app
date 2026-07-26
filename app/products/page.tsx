@@ -53,12 +53,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               bestSgdStore={p.best_sgd_store}
               bestSgdDate={p.best_sgd_date}
               bestSgdBy={p.best_sgd_by}
+              bestSgdQty={p.best_sgd_qty}
+              bestSgdUnit={p.best_sgd_unit}
+              bestSgdPerUnit={p.best_sgd_per_unit}
               bestMyr={p.best_myr}
               bestMyrStore={p.best_myr_store}
               bestMyrDate={p.best_myr_date}
               bestMyrBy={p.best_myr_by}
-              pkgQty={p.pkg_qty}
-              pkgUnit={p.pkg_unit}
+              bestMyrQty={p.best_myr_qty}
+              bestMyrUnit={p.best_myr_unit}
+              bestMyrPerUnit={p.best_myr_per_unit}
               storeOptions={storeOptions}
             />
           ))}

@@ -1,17 +1,22 @@
 'use client'
 import { Clock } from 'lucide-react'
 import { useCurrency } from '@/contexts/CurrencyContext'
-import { convert, format } from '@/lib/currency'
+import { convert, format, formatPerUnit } from '@/lib/currency'
+import { formatRelativeDate } from '@/lib/utils'
 
 interface Props {
   bestSgd: number | null
   bestSgdStore: string | null
   bestSgdDate: string | null
   bestSgdBy: string | null
+  bestSgdPerUnit?: number | null
+  bestSgdUnit?: string | null
   bestMyr: number | null
   bestMyrStore: string | null
   bestMyrDate: string | null
   bestMyrBy: string | null
+  bestMyrPerUnit?: number | null
+  bestMyrUnit?: string | null
 }
 
 function fmtDate(d: string | null): string | null {
@@ -20,8 +25,8 @@ function fmtDate(d: string | null): string | null {
 }
 
 export function ProductPriceRow({
-  bestSgd, bestSgdStore, bestSgdDate, bestSgdBy,
-  bestMyr, bestMyrStore, bestMyrDate, bestMyrBy,
+  bestSgd, bestSgdStore, bestSgdDate, bestSgdBy, bestSgdPerUnit, bestSgdUnit,
+  bestMyr, bestMyrStore, bestMyrDate, bestMyrBy, bestMyrPerUnit, bestMyrUnit,
 }: Props) {
   const { currency, rate } = useCurrency()
 
@@ -58,11 +63,17 @@ export function ProductPriceRow({
             {currency !== 'SGD' && (
               <p className="text-xs text-muted-foreground">{format(bestSgd, 'SGD')}</p>
             )}
+            {bestSgdPerUnit != null && bestSgdUnit && (
+              <p className="text-xs text-muted-foreground">
+                {formatPerUnit(convert(bestSgdPerUnit, 'SGD', currency, rate), currency)}/{bestSgdUnit}
+              </p>
+            )}
             {(bestSgdDate || bestSgdBy) && (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 {bestSgdDate && <Clock className="h-3 w-3 shrink-0" />}
                 <span className="truncate">
                   {fmtDate(bestSgdDate)}
+                  {bestSgdDate ? ` (${formatRelativeDate(bestSgdDate)})` : ''}
                   {bestSgdBy ? ` by ${bestSgdBy}` : ''}
                 </span>
               </p>
@@ -86,11 +97,17 @@ export function ProductPriceRow({
             {currency !== 'MYR' && (
               <p className="text-xs text-muted-foreground">{format(bestMyr, 'MYR')}</p>
             )}
+            {bestMyrPerUnit != null && bestMyrUnit && (
+              <p className="text-xs text-muted-foreground">
+                {formatPerUnit(convert(bestMyrPerUnit, 'MYR', currency, rate), currency)}/{bestMyrUnit}
+              </p>
+            )}
             {(bestMyrDate || bestMyrBy) && (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 {bestMyrDate && <Clock className="h-3 w-3 shrink-0" />}
                 <span className="truncate">
                   {fmtDate(bestMyrDate)}
+                  {bestMyrDate ? ` (${formatRelativeDate(bestMyrDate)})` : ''}
                   {bestMyrBy ? ` by ${bestMyrBy}` : ''}
                 </span>
               </p>

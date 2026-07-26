@@ -9,7 +9,6 @@ interface BestPrice {
   price: number
   currency: 'SGD' | 'MYR'
   storeName: string
-  storeId: string
 }
 
 interface ProductPrices {
