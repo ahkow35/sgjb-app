@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -29,15 +29,23 @@ export default function CartPage() {
   const [prices, setPrices] = useState<Map<string, ProductPrices>>(new Map())
   const [rate, setRate] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Key the fetch on the sorted product-ID set, not the `items` array reference —
+  // quantity/unit tweaks create a new `items` array every time but never change
+  // which products need prices, so they shouldn't trigger a refetch.
+  const productIdKey = Array.from(new Set(items.map((i) => i.productId))).sort().join(',')
+
+  const fetchPrices = useCallback(() => {
     if (items.length === 0) {
       setPrices(new Map())
+      setError(null)
       return
     }
 
     setLoading(true)
-    const productIds = items.map((i) => i.productId)
+    setError(null)
+    const productIds = Array.from(new Set(items.map((i) => i.productId)))
 
     Promise.all([
       fetch('/api/cart/prices', {
@@ -53,9 +61,14 @@ export default function CartPage() {
         setPrices(map)
         if (rateData?.rate) setRate(rateData.rate)
       })
-      .catch(() => {})
+      .catch(() => setError('Failed to load prices. Check your connection and try again.'))
       .finally(() => setLoading(false))
-  }, [items])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productIdKey])
+
+  useEffect(() => {
+    fetchPrices()
+  }, [fetchPrices])
 
   // Totals
   let totalSGD = 0
