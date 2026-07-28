@@ -41,6 +41,15 @@ export default async function ProfilePage() {
         <SignOutButton />
       </div>
 
+      {session.user.isAdmin && (
+        <Link
+          href="/admin/stores"
+          className="mb-4 inline-block rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted/50"
+        >
+          Manage stores
+        </Link>
+      )}
+
       {/* User info */}
       <div className="rounded-lg border p-4 mb-4">
         <p className="text-sm font-medium">
