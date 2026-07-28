@@ -119,6 +119,7 @@ export function ProductCard({
                   onClick={() => setShowAddPrice((v) => !v)}
                   className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
                   aria-label="Add latest price"
+                  aria-expanded={showAddPrice}
                   title="Add latest price"
                 >
                   <Plus className="h-4 w-4" />

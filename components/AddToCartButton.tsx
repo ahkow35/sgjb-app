@@ -36,7 +36,7 @@ export function AddToCartButton({ productId, productName, brand, unitType = 'eac
       className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${
         inCart || added
           ? 'bg-emerald-100 text-emerald-700'
-          : 'bg-gold text-white hover:bg-gold-dark'
+          : 'bg-gold text-navy hover:bg-gold-dark'
       } ${className}`}
     >
       {inCart || added ? (
