@@ -44,6 +44,9 @@ export const products = pgTable(
   },
   (table) => [
     index('products_name_fts').using('gin', sql`to_tsvector('english', ${table.name})`),
+    unique('products_barcode_unique').on(table.barcode),
+    index('products_category_idx').on(table.category),
+    index('products_created_at_idx').on(table.createdAt.desc()),
   ],
 )
 
@@ -63,6 +66,15 @@ export const priceEntries = pgTable('price_entries', {
 }, (table) => [
   index('price_entries_submitted_by_idx').on(table.submittedBy),
   check('price_entries_quantity_check', sql`quantity > (0)::numeric`),
+  index('price_entries_product_date_idx').on(table.productId, table.dateObserved.desc()),
+  index('price_entries_store_id_idx').on(table.storeId),
+  check('price_entries_price_check', sql`price > (0)::numeric`),
+  // One row per (product, store, day) for scraper writes (submitted_by NULL) and
+  // per (product, store, user, day) for manual submissions — same-day scraper
+  // re-runs and user resubmissions become idempotent updates instead of duplicates.
+  unique('price_entries_observation_key')
+    .on(table.productId, table.storeId, table.submittedBy, table.dateObserved)
+    .nullsNotDistinct(),
 ])
 
 export const users = pgTable(
@@ -83,7 +95,6 @@ export const users = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index('users_email_idx').on(table.email),
     unique('users_email_key').on(table.email),
   ],
 )

@@ -10,6 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "scrape": "tsx scripts/scraper/runner.ts",
+    "db:dedup": "tsx scripts/dedup_price_entries.ts",
+    "db:backfill-units": "tsx scripts/backfill_price_per_unit.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
