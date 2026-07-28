@@ -34,23 +34,34 @@ function TripROIPageInner() {
   const [routeIdx, setRouteIdx] = useState(0)
   const [customDist, setCustomDist] = useState('10')
   const [fuelEfficiency, setFuelEfficiency] = useState('10') // L/100km
-  const [ron95Price, setRon95Price] = useState('3.87') // MYR, auto-filled
+  const [ron95Price, setRon95Price] = useState(
+    () => searchParams.get('ron95') ?? '3.87', // MYR, auto-filled if not passed in
+  )
   const [people, setPeople] = useState('2')
   const [tollSGD, setTollSGD] = useState('1.40')
   const [grabCost, setGrabCost] = useState(String(GRAB_COST_SGD))
 
-  // Exchange rate
-  const [rate, setRate] = useState<number | null>(null)
+  // Exchange rate — the cart page already has this, so prefer the URL param
+  // it passes via the "Calculate trip ROI" link; only fetch as a fallback.
+  const [rate, setRate] = useState<number | null>(() => {
+    const paramRate = Number(searchParams.get('rate'))
+    return paramRate > 0 ? paramRate : null
+  })
 
   useEffect(() => {
-    fetch('/api/exchange-rate')
-      .then((r) => r.json())
-      .then((d) => { if (d?.rate) setRate(d.rate) })
-      .catch(() => {})
-    fetch('/api/petrol')
-      .then((r) => r.json())
-      .then((d) => { if (d?.ron95) setRon95Price(String(d.ron95)) })
-      .catch(() => {})
+    if (!searchParams.get('rate')) {
+      fetch('/api/exchange-rate')
+        .then((r) => r.json())
+        .then((d) => { if (d?.rate) setRate(d.rate) })
+        .catch(() => {})
+    }
+    if (!searchParams.get('ron95')) {
+      fetch('/api/petrol')
+        .then((r) => r.json())
+        .then((d) => { if (d?.ron95) setRon95Price(String(d.ron95)) })
+        .catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Sync toll when route changes

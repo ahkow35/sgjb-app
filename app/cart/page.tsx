@@ -123,6 +123,18 @@ export default function CartPage() {
         <p className="text-sm text-muted-foreground text-center py-2">Loading prices…</p>
       )}
 
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-destructive">{error}</p>
+          <button
+            onClick={fetchPrices}
+            className="shrink-0 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Item list */}
       <ul className="space-y-2 mb-4">
         {items.map((item) => {
@@ -272,8 +284,8 @@ export default function CartPage() {
 
       {/* Trip ROI CTA */}
       <Link
-        href={`/trip-roi?sgd=${totalSGD.toFixed(2)}&myr=${totalMYR.toFixed(2)}`}
-        className="flex items-center justify-between w-full rounded-xl bg-gold px-4 py-3.5 text-sm font-bold text-white shadow-sm"
+        href={`/trip-roi?sgd=${totalSGD.toFixed(2)}&myr=${totalMYR.toFixed(2)}${rate ? `&rate=${rate}` : ''}`}
+        className="flex items-center justify-between w-full rounded-xl bg-gold px-4 py-3.5 text-sm font-bold text-navy shadow-sm"
       >
         <span>Calculate trip ROI</span>
         <ArrowRight className="h-4 w-4" />
