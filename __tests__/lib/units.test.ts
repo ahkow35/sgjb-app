@@ -33,6 +33,18 @@ describe('normalizeQuantityUnit', () => {
     expect(normalizeQuantityUnit(1, 'lb')).toBeNull()
     expect(normalizeQuantityUnit(1, 'bogus')).toBeNull()
   })
+
+  it('maps real-world count-unit spellings onto the canonical six', () => {
+    expect(normalizeQuantityUnit(30, 'caps')).toEqual({ quantity: 30, unit: 'capsule' })
+    expect(normalizeQuantityUnit(100, 'tabs')).toEqual({ quantity: 100, unit: 'tablet' })
+    expect(normalizeQuantityUnit(60, 'softgels')).toEqual({ quantity: 60, unit: 'capsule' })
+    expect(normalizeQuantityUnit(5, 'tests')).toEqual({ quantity: 5, unit: 'each' })
+    expect(normalizeQuantityUnit(1, 'box')).toEqual({ quantity: 1, unit: 'pack' })
+    expect(normalizeQuantityUnit(1, 'per')).toEqual({ quantity: 1, unit: 'each' })
+    expect(normalizeQuantityUnit(10, 'sacs')).toEqual({ quantity: 10, unit: 'sachet' })
+    // stored data still only carries canonical units — aliases never leak through
+    expect(normalizeQuantityUnit(2, 'SET')).toEqual({ quantity: 2, unit: 'each' })
+  })
 })
 
 describe('formatQuantityUnit', () => {

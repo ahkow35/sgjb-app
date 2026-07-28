@@ -11,6 +11,38 @@ export const CANONICAL_UNITS = {
 /** Count-based units that pass through unchanged (no conversion factor). */
 export const COUNT_UNITS = ['each', 'pack', 'pcs', 'tablet', 'capsule', 'sachet'] as const
 
+/**
+ * Spellings scrapers and users actually submit, mapped onto the canonical
+ * count units. Kept separate from COUNT_UNITS so stored data only ever
+ * contains the canonical six.
+ */
+const COUNT_UNIT_ALIASES: Record<string, (typeof COUNT_UNITS)[number]> = {
+  pc: 'each',
+  piece: 'each',
+  pieces: 'each',
+  per: 'each', // "1 per pack"-style listings
+  set: 'each',
+  sets: 'each',
+  test: 'each',
+  tests: 'each',
+  pkt: 'pack',
+  packet: 'pack',
+  packets: 'pack',
+  box: 'pack',
+  boxes: 'pack',
+  tab: 'tablet',
+  tabs: 'tablet',
+  tablets: 'tablet',
+  cap: 'capsule',
+  caps: 'capsule',
+  capsules: 'capsule',
+  softgel: 'capsule',
+  softgels: 'capsule',
+  sac: 'sachet',
+  sacs: 'sachet',
+  sachets: 'sachet',
+}
+
 /** Every unit accepted as input, before normalization. Case-insensitive. */
 export const ALLOWED_UNITS = [
   'g', 'kg', 'mg', 'ml', 'L', 'l', 'cl',
@@ -39,7 +71,8 @@ export function normalizeQuantityUnit(
   quantity: number,
   unit: string,
 ): { quantity: number; unit: string } | null {
-  const u = unit.trim().toLowerCase()
+  const raw = unit.trim().toLowerCase()
+  const u = COUNT_UNIT_ALIASES[raw] ?? raw
 
   if ((COUNT_UNITS as readonly string[]).includes(u)) {
     return { quantity, unit: u }

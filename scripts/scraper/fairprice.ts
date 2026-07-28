@@ -73,12 +73,16 @@ export async function scrapeFairPrice(): Promise<ScrapedProduct[]> {
         timeout: 30000,
       })
 
-      // Wait for JS to boot then scroll to trigger product fetch
+      // Wait for JS to boot then scroll repeatedly — each scroll batch
+      // triggers another /api/product/v2 page fetch (~40 products), so
+      // depth here directly sets products-per-category yield.
       await page.waitForTimeout(5000)
       await page.evaluate(() => window.scrollTo(0, 600))
       await page.waitForTimeout(3000)
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-      await page.waitForTimeout(2000)
+      for (let i = 0; i < 6; i++) {
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+        await page.waitForTimeout(2500)
+      }
     } catch (e) {
       console.warn(`[FairPrice] Failed to load ${category}: ${e}`)
     }
