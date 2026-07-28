@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -35,6 +35,10 @@ export default function CartPage() {
   // quantity/unit tweaks create a new `items` array every time but never change
   // which products need prices, so they shouldn't trigger a refetch.
   const productIdKey = Array.from(new Set(items.map((i) => i.productId))).sort().join(',')
+  // Always holds the key for the CURRENT product set; in-flight fetches compare
+  // against it at resolution time to discard stale responses.
+  const latestKeyRef = useRef(productIdKey)
+  latestKeyRef.current = productIdKey
 
   const fetchPrices = useCallback(() => {
     if (items.length === 0) {
@@ -46,6 +50,10 @@ export default function CartPage() {
     setLoading(true)
     setError(null)
     const productIds = Array.from(new Set(items.map((i) => i.productId)))
+    // Ignore this response if the cart's product set changes again before it
+    // resolves — otherwise the slower of two in-flight fetches wins and leaves
+    // prices for a stale set.
+    const requestedKey = productIdKey
 
     Promise.all([
       fetch('/api/cart/prices', {
@@ -56,13 +64,20 @@ export default function CartPage() {
       fetch('/api/exchange-rate').then((r) => r.json()),
     ])
       .then(([pricesData, rateData]: [ProductPrices[], ExchangeRate]) => {
+        if (requestedKey !== latestKeyRef.current) return
         const map = new Map<string, ProductPrices>()
         for (const p of pricesData) map.set(p.productId, p)
         setPrices(map)
         if (rateData?.rate) setRate(rateData.rate)
       })
-      .catch(() => setError('Failed to load prices. Check your connection and try again.'))
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (requestedKey !== latestKeyRef.current) return
+        setError('Failed to load prices. Check your connection and try again.')
+      })
+      .finally(() => {
+        if (requestedKey !== latestKeyRef.current) return
+        setLoading(false)
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productIdKey])
 

@@ -66,4 +66,23 @@ describe('SearchBar', () => {
 
     expect(document.activeElement).toBe(input)
   })
+
+  it('a chip click cancels the pending debounce — the old category never reasserts itself', () => {
+    render(<SearchBar />)
+    const input = screen.getByRole('textbox', { name: 'Search products' }) as HTMLInputElement
+
+    // Type, then tap a category chip before the debounce fires.
+    fireEvent.change(input, { target: { value: 'milo' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Beverages' }))
+
+    expect(push).toHaveBeenCalledTimes(1)
+    expect(push).toHaveBeenCalledWith('/products?q=milo&category=beverages')
+
+    // Let the (cancelled) debounce window elapse — no second navigation with
+    // the stale category may fire.
+    act(() => {
+      jest.advanceTimersByTime(350)
+    })
+    expect(push).toHaveBeenCalledTimes(1)
+  })
 })

@@ -92,7 +92,15 @@ export function SearchBar() {
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}
-            onClick={() => navigate(value, cat.value)}
+            onClick={() => {
+              // Cancel any pending debounced navigation — it closed over the
+              // old category and would revert this chip selection when it fired.
+              if (debounceRef.current) {
+                clearTimeout(debounceRef.current)
+                debounceRef.current = null
+              }
+              navigate(value, cat.value)
+            }}
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               category === cat.value
                 ? 'bg-navy text-white'
