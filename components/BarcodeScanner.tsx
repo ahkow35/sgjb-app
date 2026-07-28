@@ -32,6 +32,16 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
   const [error, setError] = useState('')
   const hasResultRef = useRef(false)
 
+  // onProduct/onNotFound are recreated on every parent render. Holding them in
+  // refs (kept fresh via a separate effect) lets the mount effect below run
+  // exactly once, so the camera isn't torn down and reinitialized mid-scan.
+  const onProductRef = useRef(onProduct)
+  const onNotFoundRef = useRef(onNotFound)
+  useEffect(() => {
+    onProductRef.current = onProduct
+    onNotFoundRef.current = onNotFound
+  })
+
   useEffect(() => {
     let stopped = false
 
@@ -66,14 +76,14 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
                 console.error('[scanner] /api/barcode returned', res.status)
                 setError(`Lookup failed (${res.status}). Adding as new product…`)
                 setStatus('error')
-                setTimeout(() => onNotFound(barcode), 1200)
+                setTimeout(() => onNotFoundRef.current(barcode), 1200)
                 return
               }
               const data: ScanResult = await res.json()
               if (data.product) {
-                onProduct(data.product)
+                onProductRef.current(data.product)
               } else {
-                onNotFound(barcode)
+                onNotFoundRef.current(barcode)
               }
             } catch (e) {
               console.error('[scanner] lookup failed', e)
@@ -82,7 +92,7 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
                 : 'Lookup failed. Adding as new product…'
               setError(msg)
               setStatus('error')
-              setTimeout(() => onNotFound(barcode), 1200)
+              setTimeout(() => onNotFoundRef.current(barcode), 1200)
             } finally {
               clearTimeout(timeoutId)
             }
@@ -125,7 +135,9 @@ export function BarcodeScanner({ onClose, onProduct, onNotFound }: Props) {
       controlsRef.current?.stop()
       controlsRef.current = null
     }
-  }, [onProduct, onNotFound])
+    // Mount effect must run exactly once — see onProductRef/onNotFoundRef above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
