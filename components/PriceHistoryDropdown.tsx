@@ -1,10 +1,17 @@
 'use client'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useCurrency } from '@/contexts/CurrencyContext'
 import { convert, format, formatPerUnit } from '@/lib/currency'
-import { PriceTrendSparkline } from './PriceTrendSparkline'
+
+// recharts is heavy — keep it out of the initial /products bundle by only
+// loading it once a dropdown is actually opened.
+const PriceTrendSparkline = dynamic(
+  () => import('./PriceTrendSparkline').then((mod) => mod.PriceTrendSparkline),
+  { ssr: false, loading: () => <span className="inline-block h-6 w-20" aria-hidden="true" /> },
+)
 
 interface PriceEntry {
   id: string

@@ -245,7 +245,7 @@ function SubmitPageInner() {
                     isActive
                       ? 'bg-navy text-white'
                       : isCompleted
-                        ? 'bg-gold text-white'
+                        ? 'bg-gold text-navy'
                         : 'bg-muted text-muted-foreground'
                   }`}
                 >

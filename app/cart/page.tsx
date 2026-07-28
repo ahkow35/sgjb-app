@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -29,15 +29,31 @@ export default function CartPage() {
   const [prices, setPrices] = useState<Map<string, ProductPrices>>(new Map())
   const [rate, setRate] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Key the fetch on the sorted product-ID set, not the `items` array reference —
+  // quantity/unit tweaks create a new `items` array every time but never change
+  // which products need prices, so they shouldn't trigger a refetch.
+  const productIdKey = Array.from(new Set(items.map((i) => i.productId))).sort().join(',')
+  // Always holds the key for the CURRENT product set; in-flight fetches compare
+  // against it at resolution time to discard stale responses.
+  const latestKeyRef = useRef(productIdKey)
+  latestKeyRef.current = productIdKey
+
+  const fetchPrices = useCallback(() => {
     if (items.length === 0) {
       setPrices(new Map())
+      setError(null)
       return
     }
 
     setLoading(true)
-    const productIds = items.map((i) => i.productId)
+    setError(null)
+    const productIds = Array.from(new Set(items.map((i) => i.productId)))
+    // Ignore this response if the cart's product set changes again before it
+    // resolves — otherwise the slower of two in-flight fetches wins and leaves
+    // prices for a stale set.
+    const requestedKey = productIdKey
 
     Promise.all([
       fetch('/api/cart/prices', {
@@ -48,14 +64,26 @@ export default function CartPage() {
       fetch('/api/exchange-rate').then((r) => r.json()),
     ])
       .then(([pricesData, rateData]: [ProductPrices[], ExchangeRate]) => {
+        if (requestedKey !== latestKeyRef.current) return
         const map = new Map<string, ProductPrices>()
         for (const p of pricesData) map.set(p.productId, p)
         setPrices(map)
         if (rateData?.rate) setRate(rateData.rate)
       })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [items])
+      .catch(() => {
+        if (requestedKey !== latestKeyRef.current) return
+        setError('Failed to load prices. Check your connection and try again.')
+      })
+      .finally(() => {
+        if (requestedKey !== latestKeyRef.current) return
+        setLoading(false)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productIdKey])
+
+  useEffect(() => {
+    fetchPrices()
+  }, [fetchPrices])
 
   // Totals
   let totalSGD = 0
@@ -108,6 +136,18 @@ export default function CartPage() {
 
       {loading && (
         <p className="text-sm text-muted-foreground text-center py-2">Loading prices…</p>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-destructive">{error}</p>
+          <button
+            onClick={fetchPrices}
+            className="shrink-0 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       {/* Item list */}
@@ -259,8 +299,8 @@ export default function CartPage() {
 
       {/* Trip ROI CTA */}
       <Link
-        href={`/trip-roi?sgd=${totalSGD.toFixed(2)}&myr=${totalMYR.toFixed(2)}`}
-        className="flex items-center justify-between w-full rounded-xl bg-gold px-4 py-3.5 text-sm font-bold text-white shadow-sm"
+        href={`/trip-roi?sgd=${totalSGD.toFixed(2)}&myr=${totalMYR.toFixed(2)}${rate ? `&rate=${rate}` : ''}`}
+        className="flex items-center justify-between w-full rounded-xl bg-gold px-4 py-3.5 text-sm font-bold text-navy shadow-sm"
       >
         <span>Calculate trip ROI</span>
         <ArrowRight className="h-4 w-4" />
