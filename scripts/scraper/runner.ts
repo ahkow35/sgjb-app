@@ -3,6 +3,7 @@ import { scrapeFairPrice } from './fairprice'
 import { scrapeWatsonMY } from './watson_my'
 import { scrapeGuardianSG } from './guardian_sg'
 import { scrapeShengSiong } from './shengsiong'
+import { scrapeJayaGrocer } from './jayagrocer'
 import { upsertScrapedProduct } from './db'
 
 const SCRAPERS: Record<string, { label: string; fn: () => Promise<unknown[]> }> = {
@@ -10,6 +11,7 @@ const SCRAPERS: Record<string, { label: string; fn: () => Promise<unknown[]> }> 
   guardian: { label: 'Guardian SG', fn: scrapeGuardianSG },
   watson: { label: 'Watson JB', fn: scrapeWatsonMY },
   shengsiong: { label: 'Sheng Siong SG', fn: scrapeShengSiong },
+  jayagrocer: { label: 'Jaya Grocer (KL, MY)', fn: scrapeJayaGrocer },
 }
 
 async function run() {
