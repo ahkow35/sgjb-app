@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverError } from '@/lib/api-error'
 import { isAdminUser } from '@/lib/admin'
 import { db, stores } from '@/lib/db'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { auth } from '@/auth'
 import { validateStoreFields } from '../validation'
+import { storeNameExists, isUniqueViolation } from '../collision'
 
 // Admin-only. Partial update of a store's fields. Admin is re-checked
 // against the DB, never trusted from the session token. No DELETE — stores
@@ -48,17 +49,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    if (values.name) {
-      // Exact case-insensitive match — ilike would treat % and _ in the
-      // submitted name as wildcards and 409 against unrelated stores.
-      const [dup] = await db
-        .select({ id: stores.id })
-        .from(stores)
-        .where(and(sql`lower(${stores.name}) = lower(${values.name})`, ne(stores.id, params.id)))
-        .limit(1)
-      if (dup) {
-        return NextResponse.json({ error: 'A store with this name already exists' }, { status: 409 })
-      }
+    if (values.name && (await storeNameExists(values.name, params.id))) {
+      return NextResponse.json({ error: 'A store with this name already exists' }, { status: 409 })
     }
 
     const [updated] = await db
@@ -73,6 +65,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     return NextResponse.json(updated)
   } catch (e) {
+    // The pre-check can lose a race to a concurrent write; the unique index
+    // is the authoritative guard, so a 23505 here is still a duplicate name.
+    if (isUniqueViolation(e)) {
+      return NextResponse.json({ error: 'A store with this name already exists' }, { status: 409 })
+    }
     return serverError(e, 'PATCH /api/stores/[id]')
   }
 }
