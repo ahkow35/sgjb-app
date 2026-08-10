@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverError } from '@/lib/api-error'
-import { isAdminUser } from '@/lib/admin'
+import { requireAdmin } from '@/lib/require-admin'
 import { db, products } from '@/lib/db'
 import { eq } from 'drizzle-orm'
-import { auth } from '@/auth'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -34,14 +33,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 // Admin-only. Removes the product; its price_entries are removed via the
 // ON DELETE CASCADE foreign key. Admin is re-checked against the DB.
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await auth()
-  const userId = session?.user?.id
-  if (!userId) {
-    return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
-  }
-  if (!(await isAdminUser(userId))) {
-    return NextResponse.json({ error: 'Admin only' }, { status: 403 })
-  }
+  const denied = await requireAdmin()
+  if (denied) return denied
 
   try {
     const [deleted] = await db
