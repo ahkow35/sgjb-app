@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   index,
+  uniqueIndex,
   unique,
   check,
   boolean,
@@ -21,14 +22,27 @@ export const unitTypeEnum = pgEnum('unit_type', ['weight', 'each', 'volume'])
 export const currencyEnum = pgEnum('currency_type', ['SGD', 'MYR'])
 export const priceSourceEnum = pgEnum('price_source', ['manual', 'barcode', 'scraper', 'admin'])
 
-export const stores = pgTable('stores', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  country: countryEnum('country').notNull(),
-  city: text('city').notNull().default(''),
-  type: storeTypeEnum('type').notNull(),
-  url: text('url').notNull().default(''),
-})
+// Source of truth for the store shape. The API validator (`StoreFields` in
+// app/api/stores/validation.ts) and the admin UI (`Store` in
+// app/admin/stores/page.tsx) mirror these columns by hand — keep them in step.
+export const stores = pgTable(
+  'stores',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    country: countryEnum('country').notNull(),
+    city: text('city').notNull().default(''),
+    type: storeTypeEnum('type').notNull(),
+    url: text('url').notNull().default(''),
+  },
+  (table) => [
+    // Case-insensitive unique store name — the authoritative guard behind the
+    // application dup-check, which alone can race under concurrent admin
+    // writes. Apply with `npm run db:push` (README); requires no existing
+    // case-insensitive duplicate names before it can be created.
+    uniqueIndex('stores_name_lower_unique').on(sql`lower(${table.name})`),
+  ],
+)
 
 export const products = pgTable(
   'products',

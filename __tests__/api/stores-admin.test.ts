@@ -177,6 +177,24 @@ describe('stores admin API', () => {
         expect.objectContaining({ name: 'FairPrice', city: 'Tampines' }),
       )
     })
+
+    it('returns 409 when the unique index rejects a racing insert', async () => {
+      mockAuth.mockResolvedValue({ user: { id: 'admin-1' } })
+      mockIsAdminUser.mockResolvedValue(true)
+      mockDb.select.mockReturnValueOnce(selectResult([])) // pre-check passes
+      mockDb.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockRejectedValue({ code: '23505' }),
+        }),
+      })
+
+      const res = await postStore(
+        jsonRequest({ name: 'FairPrice', country: 'SG', type: 'supermarket' }) as any,
+      )
+
+      expect(res.status).toBe(409)
+      expect(await res.json()).toEqual({ error: 'A store with this name already exists' })
+    })
   })
 
   describe('PATCH /api/stores/[id]', () => {
@@ -228,6 +246,29 @@ describe('stores admin API', () => {
 
       expect(res.status).toBe(409)
       expect(mockDb.update).not.toHaveBeenCalled()
+    })
+
+    it('returns 409 when the unique index rejects a racing rename', async () => {
+      mockAuth.mockResolvedValue({ user: { id: 'admin-1' } })
+      mockIsAdminUser.mockResolvedValue(true)
+      mockDb.select
+        .mockReturnValueOnce(selectResult([{ id: 'store-1' }])) // store exists
+        .mockReturnValueOnce(selectResult([])) // pre-check passes
+      mockDb.update.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            // nested-cause shape — exercises the other branch of isUniqueViolation
+            returning: jest.fn().mockRejectedValue({ cause: { code: '23505' } }),
+          }),
+        }),
+      })
+
+      const res = await patchStore(jsonRequest({ name: 'Sheng Siong' }, 'PATCH') as any, {
+        params: { id: 'store-1' },
+      })
+
+      expect(res.status).toBe(409)
+      expect(await res.json()).toEqual({ error: 'A store with this name already exists' })
     })
   })
 })

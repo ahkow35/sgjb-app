@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverError } from '@/lib/api-error'
 import { isAdminUser } from '@/lib/admin'
 import { db, stores } from '@/lib/db'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { auth } from '@/auth'
 import { validateStoreFields } from './validation'
+import { storeNameExists, isUniqueViolation } from './collision'
 
 export async function GET(req: NextRequest) {
   const country = req.nextUrl.searchParams.get('country') as 'SG' | 'MY' | null
@@ -54,14 +55,7 @@ export async function POST(req: NextRequest) {
   const { name, country, type, city, url } = result.values
 
   try {
-    // Exact case-insensitive match — ilike would treat % and _ in the
-    // submitted name as wildcards and 409 against unrelated stores.
-    const [existing] = await db
-      .select({ id: stores.id })
-      .from(stores)
-      .where(sql`lower(${stores.name}) = lower(${name!})`)
-      .limit(1)
-    if (existing) {
+    if (await storeNameExists(name!)) {
       return NextResponse.json({ error: 'A store with this name already exists' }, { status: 409 })
     }
 
@@ -78,6 +72,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(created, { status: 201 })
   } catch (e) {
+    // The pre-check can lose a race to a concurrent write; the unique index
+    // is the authoritative guard, so a 23505 here is still a duplicate name.
+    if (isUniqueViolation(e)) {
+      return NextResponse.json({ error: 'A store with this name already exists' }, { status: 409 })
+    }
     return serverError(e, 'POST /api/stores')
   }
 }
