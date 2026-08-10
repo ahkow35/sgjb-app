@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverError } from '@/lib/api-error'
-import { isAdminUser } from '@/lib/admin'
+import { requireAdmin } from '@/lib/require-admin'
 import { db, stores } from '@/lib/db'
 import { eq } from 'drizzle-orm'
-import { auth } from '@/auth'
 import { validateStoreFields } from '../validation'
 import { storeNameExists, isUniqueViolation } from '../collision'
 
@@ -11,14 +10,8 @@ import { storeNameExists, isUniqueViolation } from '../collision'
 // against the DB, never trusted from the session token. No DELETE — stores
 // cascade-delete price entries, too dangerous to expose here.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await auth()
-  const userId = session?.user?.id
-  if (!userId) {
-    return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
-  }
-  if (!(await isAdminUser(userId))) {
-    return NextResponse.json({ error: 'Admin only' }, { status: 403 })
-  }
+  const denied = await requireAdmin()
+  if (denied) return denied
 
   let body: Record<string, unknown>
   try {
