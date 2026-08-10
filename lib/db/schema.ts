@@ -86,6 +86,12 @@ export const priceEntries = pgTable('price_entries', {
   // One row per (product, store, day) for scraper writes (submitted_by NULL) and
   // per (product, store, user, day) for manual submissions — same-day scraper
   // re-runs and user resubmissions become idempotent updates instead of duplicates.
+  //
+  // ⚠️ Do NOT "fix" a drizzle-kit push diff that wants to recreate this. As of
+  // drizzle-kit 0.31.x, push cannot read NULLS NOT DISTINCT back from Postgres,
+  // so it always reports a phantom diff here and offers to TRUNCATE price_entries.
+  // The live constraint already IS `UNIQUE NULLS NOT DISTINCT (...)` and matches
+  // this line — verified against prod. That's why db:push is disabled (see README).
   unique('price_entries_observation_key')
     .on(table.productId, table.storeId, table.submittedBy, table.dateObserved)
     .nullsNotDistinct(),
