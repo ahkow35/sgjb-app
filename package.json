@@ -12,7 +12,7 @@
     "scrape": "tsx scripts/scraper/runner.ts",
     "db:dedup": "tsx scripts/dedup_price_entries.ts",
     "db:backfill-units": "tsx scripts/backfill_price_per_unit.ts",
-    "db:push": "drizzle-kit push",
+    "db:push": "echo 'db:push is DISABLED here: drizzle-kit 0.31.x mis-reads NULLS NOT DISTINCT and will offer to TRUNCATE price_entries even though the live DB already matches schema.ts. See README > Database schema changes for the safe flow. To override deliberately: npx drizzle-kit push' && exit 1",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
   },
