@@ -9,8 +9,8 @@ interface Props {
 }
 
 const grades = [
-  { key: 'ron95' as const, sgKey: 'grade95' as const, label: 'RON 95', sgLabel: 'SG 95', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
   { key: 'ron97' as const, sgKey: 'grade98' as const, label: 'RON 97', sgLabel: 'SG 98', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
+  { key: 'ron95' as const, sgKey: 'grade95' as const, label: 'RON 95', sgLabel: 'SG 95', note: 'Malaysian cars only', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' },
   { key: 'diesel' as const, sgKey: 'diesel' as const, label: 'Diesel', sgLabel: 'SG Diesel', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
 ]
 
@@ -30,12 +30,15 @@ export function PetrolWidget({ data, sgData, rate }: Props) {
         <p className="text-xs text-muted-foreground">{dateLabel} · data.gov.my</p>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {grades.map(({ key, label, bg, border, text }) => (
+        {grades.map(({ key, label, bg, border, text, ...rest }) => (
           <div
             key={key}
             className={`rounded-xl ${bg} border ${border} px-3 py-3 text-center`}
           >
             <p className="text-xs text-muted-foreground mb-1">{label}</p>
+            {'note' in rest && (
+              <p className="text-[10px] font-semibold text-muted-foreground mb-1">{rest.note}</p>
+            )}
             <p className={`text-xl font-extrabold ${text}`}>
               {data[key].toFixed(2)}
             </p>

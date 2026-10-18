@@ -36,9 +36,11 @@ function TripROIPageInner() {
   const [fuelEfficiency, setFuelEfficiency] = useState('10') // L/100km
   // MYR, auto-filled if not passed in. Validate like `rate` below — a garbage
   // param would otherwise skip the fallback fetch AND poison the math with NaN.
-  const [ron95Price, setRon95Price] = useState(() => {
-    const param = Number(searchParams.get('ron95'))
-    return param > 0 ? String(param) : '3.87'
+  // RON97, not RON95: since 1 Apr 2026 Singapore-registered cars may not buy
+  // RON95 in Malaysia. 5.05 = RON97 RM/L observed 2026-09-24.
+  const [ron97Price, setRon97Price] = useState(() => {
+    const param = Number(searchParams.get('ron97'))
+    return param > 0 ? String(param) : '5.05'
   })
   const [people, setPeople] = useState('2')
   const [tollSGD, setTollSGD] = useState('1.40')
@@ -60,10 +62,10 @@ function TripROIPageInner() {
         .then((d) => { if (d?.rate) setRate(d.rate) })
         .catch(() => {})
     }
-    if (!(Number(searchParams.get('ron95')) > 0)) {
+    if (!(Number(searchParams.get('ron97')) > 0)) {
       fetch('/api/petrol')
         .then((r) => r.json())
-        .then((d) => { if (d?.ron95) setRon95Price(String(d.ron95)) })
+        .then((d) => { if (d?.ron97) setRon97Price(String(d.ron97)) })
         .catch(() => {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,7 +87,7 @@ function TripROIPageInner() {
   if (transport === 'drive') {
     const dist = routeIdx < ROUTES.length - 1 ? ROUTES[routeIdx].distanceKm : Number(customDist) || 0
     const fuelL = (dist * 2 * Number(fuelEfficiency || 10)) / 100 // round trip
-    const fuelMYR = fuelL * Number(ron95Price || 3.87)
+    const fuelMYR = fuelL * Number(ron97Price || 5.05)
     const fuelSGD = fuelMYR / rate1
     const toll = Number(tollSGD || 0) * 2 // round trip (simplified: same toll both ways)
     transportCostSGDTotal = fuelSGD + toll
@@ -240,15 +242,18 @@ function TripROIPageInner() {
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">RON95 price (RM/L)</label>
+                <label className="text-xs text-muted-foreground block mb-1">RON97 price (RM/L)</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={ron95Price}
-                  onChange={(e) => setRon95Price(e.target.value)}
+                  value={ron97Price}
+                  onChange={(e) => setRon97Price(e.target.value)}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                 />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Singapore-registered cars must use RON97 in Malaysia (RON95 is for Malaysian cars only).
+                </p>
               </div>
             </div>
 
