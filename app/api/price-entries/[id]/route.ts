@@ -12,7 +12,8 @@ export async function PATCH() {
   )
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const session = await auth()
   const userId = session?.user?.id
   if (!userId) {

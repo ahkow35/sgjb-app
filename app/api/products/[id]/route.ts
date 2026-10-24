@@ -4,7 +4,8 @@ import { requireAdmin } from '@/lib/require-admin'
 import { db, products } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const [product] = await db
       .select({
@@ -32,7 +33,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 // Admin-only. Removes the product; its price_entries are removed via the
 // ON DELETE CASCADE foreign key. Admin is re-checked against the DB.
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const denied = await requireAdmin()
   if (denied) return denied
 

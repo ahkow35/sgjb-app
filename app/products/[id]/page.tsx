@@ -38,7 +38,8 @@ async function getPrices(productId: string) {
     .limit(50)
 }
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const [product, prices] = await Promise.all([getProduct(params.id), getPrices(params.id)])
 
   if (!product) notFound()

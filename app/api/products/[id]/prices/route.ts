@@ -8,10 +8,8 @@ import { eq, desc } from 'drizzle-orm'
 // causing newly-added prices to not appear (stale price history).
 export const dynamic = 'force-dynamic'
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const data = await db.select({
       id: priceEntries.id,
