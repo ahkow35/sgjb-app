@@ -9,7 +9,8 @@ import { storeNameExists, isUniqueViolation } from '../collision'
 // Admin-only. Partial update of a store's fields. Admin is re-checked
 // against the DB, never trusted from the session token. No DELETE — stores
 // cascade-delete price entries, too dangerous to expose here.
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const denied = await requireAdmin()
   if (denied) return denied
 

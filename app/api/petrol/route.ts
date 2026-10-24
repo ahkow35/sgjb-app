@@ -3,6 +3,7 @@ import { db, liveData } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { fetchPetrolPrices, CACHE_KEY } from '@/lib/petrol'
 
+export const dynamic = 'force-static'
 export const revalidate = 86400
 
 export async function GET() {
