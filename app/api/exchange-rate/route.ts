@@ -3,6 +3,7 @@ import { db, liveData } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { fetchExchangeRate, CACHE_KEY } from '@/lib/exchange'
 
+export const dynamic = 'force-static'
 export const revalidate = 3600
 
 export async function GET() {

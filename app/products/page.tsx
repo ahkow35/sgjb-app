@@ -17,7 +17,8 @@ async function getStoreOptions() {
     .orderBy(stores.country, stores.name)
 }
 
-export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function ProductsPage(props: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams
   const q = searchParams.q ?? ''
   const category = searchParams.category ?? ''
   const [productList, total, storeOptions] = await Promise.all([

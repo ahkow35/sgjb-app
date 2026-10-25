@@ -118,7 +118,7 @@ describe('write protection', () => {
     mockAuth.mockResolvedValue(null)
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
-      params: { id: 'entry-1' },
+      params: Promise.resolve({ id: 'entry-1' }),
     })
 
     expect(res.status).toBe(401)
@@ -132,7 +132,7 @@ describe('write protection', () => {
       .mockReturnValueOnce(selectResult([{ isAdmin: false }])) // admin check
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
-      params: { id: 'entry-1' },
+      params: Promise.resolve({ id: 'entry-1' }),
     })
 
     expect(res.status).toBe(403)
@@ -146,7 +146,7 @@ describe('write protection', () => {
     mockDelete()
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
-      params: { id: 'entry-1' },
+      params: Promise.resolve({ id: 'entry-1' }),
     })
 
     expect(res.status).toBe(200)
@@ -163,7 +163,7 @@ describe('write protection', () => {
     mockDelete()
 
     const res = await deletePriceEntry(new Request('http://localhost/api/test') as any, {
-      params: { id: 'entry-1' },
+      params: Promise.resolve({ id: 'entry-1' }),
     })
 
     expect(res.status).toBe(200)
@@ -175,7 +175,7 @@ describe('write protection', () => {
     mockAuth.mockResolvedValue(null)
 
     const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
-      params: { id: 'prod-1' },
+      params: Promise.resolve({ id: 'prod-1' }),
     })
 
     expect(res.status).toBe(401)
@@ -187,7 +187,7 @@ describe('write protection', () => {
     mockDb.select.mockReturnValueOnce(selectResult([{ isAdmin: false }]))
 
     const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
-      params: { id: 'prod-1' },
+      params: Promise.resolve({ id: 'prod-1' }),
     })
 
     expect(res.status).toBe(403)
@@ -201,7 +201,7 @@ describe('write protection', () => {
     mockDelete([{ id: 'prod-1' }])
 
     const res = await deleteProduct(new Request('http://localhost/api/test') as any, {
-      params: { id: 'prod-1' },
+      params: Promise.resolve({ id: 'prod-1' }),
     })
 
     expect(res.status).toBe(200)

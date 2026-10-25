@@ -206,7 +206,7 @@ describe('stores admin API', () => {
       mockDb.select.mockReturnValueOnce(selectResult([]))
 
       const res = await patchStore(jsonRequest({ name: 'FairPrice' }, 'PATCH') as any, {
-        params: { id: 'nope' },
+        params: Promise.resolve({ id: 'nope' }),
       })
 
       expect(res.status).toBe(404)
@@ -225,7 +225,7 @@ describe('stores admin API', () => {
       ])
 
       const res = await patchStore(jsonRequest({ name: 'New Name' }, 'PATCH') as any, {
-        params: { id: 'store-1' },
+        params: Promise.resolve({ id: 'store-1' }),
       })
 
       expect(res.status).toBe(200)
@@ -241,7 +241,7 @@ describe('stores admin API', () => {
       mockUpdate([])
 
       const res = await patchStore(jsonRequest({ name: 'Sheng Siong' }, 'PATCH') as any, {
-        params: { id: 'store-1' },
+        params: Promise.resolve({ id: 'store-1' }),
       })
 
       expect(res.status).toBe(409)
@@ -264,7 +264,7 @@ describe('stores admin API', () => {
       })
 
       const res = await patchStore(jsonRequest({ name: 'Sheng Siong' }, 'PATCH') as any, {
-        params: { id: 'store-1' },
+        params: Promise.resolve({ id: 'store-1' }),
       })
 
       expect(res.status).toBe(409)
